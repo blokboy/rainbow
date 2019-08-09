@@ -34,7 +34,7 @@ import { uniswapAddLiquidityTokens, uniswapUpdateLiquidityTokens } from './unisw
 const DATA_UPDATE_ASSETS = 'data/DATA_UPDATE_ASSETS';
 const DATA_UPDATE_TRANSACTIONS = 'data/DATA_UPDATE_TRANSACTIONS';
 
-const DATA_UPDATE_ADDRESS_SOCKET = 'data/DATA_UPDATE_ADDRESS_SOCKET';
+const DATA_UPDATE_SOCKETS = 'data/DATA_UPDATE_SOCKETS';
 
 const DATA_LOAD_ASSETS_REQUEST = 'data/DATA_LOAD_ASSETS_REQUEST';
 const DATA_LOAD_ASSETS_SUCCESS = 'data/DATA_LOAD_ASSETS_SUCCESS';
@@ -53,6 +53,9 @@ const messages = {
     APPENDED: 'appended address assets',
     CHANGED: 'changed address assets',
     RECEIVED: 'received address assets',
+  },
+  COMPOUND: {
+    RECEIVED: 'received earned interest',
   },
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
@@ -89,6 +92,30 @@ const addressSubscription = (address, currency, action = 'subscribe') => [
 ];
 /* eslint-disable camelcase */
 
+/* eslint-disable camelcase */
+const compoundSubscription = (address, action = 'subscribe') => [
+  action,
+  {
+    payload: {
+      address,
+    },
+    scope: ['earned_interest'],
+  },
+];
+/* eslint-disable camelcase */
+
+/* eslint-disable camelcase */
+const getAssetData = (assetCodes, currency, action = 'subscribe') => [
+  action,
+  {
+    payload: {
+      asset_codes: assetCodes,
+      currency,
+    },
+  },
+];
+/* eslint-disable camelcase */
+
 export const dataLoadState = () => async (dispatch, getState) => {
   const { accountAddress, network } = getState().settings;
   try {
@@ -114,7 +141,7 @@ export const dataLoadState = () => async (dispatch, getState) => {
 };
 
 const dataUnsubscribe = () => (dispatch, getState) => {
-  const { addressSocket } = getState().data;
+  const { addressSocket, compoundSocket } = getState().data;
   const { accountAddress, nativeCurrency } = getState().settings;
   if (!isNil(addressSocket)) {
     addressSocket.emit(...addressSubscription(
@@ -123,6 +150,10 @@ const dataUnsubscribe = () => (dispatch, getState) => {
       'unsubscribe',
     ));
     addressSocket.close();
+  }
+  if (!isNil(compoundSocket)) {
+    compoundSocket.emit(...compoundSubscription(accountAddress, 'unsubscribe'));
+    compoundSocket.close();
   }
 };
 
@@ -137,13 +168,19 @@ export const dataClearState = () => (dispatch, getState) => {
 export const dataInit = () => (dispatch, getState) => {
   const { accountAddress, nativeCurrency } = getState().settings;
   const addressSocket = createSocket('address');
+  const compoundSocket = createSocket('compound');
   dispatch({
-    payload: addressSocket,
-    type: DATA_UPDATE_ADDRESS_SOCKET,
+    payload: { addressSocket, compoundSocket },
+    type: DATA_UPDATE_SOCKETS,
   });
   addressSocket.on(messages.CONNECT, () => {
     addressSocket.emit(...addressSubscription(accountAddress, nativeCurrency.toLowerCase()));
     dispatch(listenOnNewMessages(addressSocket));
+  });
+  compoundSocket.on(messages.CONNECT, () => {
+    console.log('subscribing to compound');
+    compoundSocket.emit(...compoundSubscription(accountAddress));
+    dispatch(listenOnCompoundMessages(compoundSocket));
   });
 };
 
@@ -189,11 +226,46 @@ const dedupeUniqueTokens = assets => (dispatch, getState) => {
   return updatedAssets;
 };
 
+const checkCompoundMeta = message => (dispatch, getState) => {
+  const { accountAddress, nativeCurrency } = getState().settings;
+  const address = get(message, 'meta.address');
+  return isLowerCaseMatch(address, accountAddress);
+};
+
 const checkMeta = message => (dispatch, getState) => {
   const { accountAddress, nativeCurrency } = getState().settings;
   const address = get(message, 'meta.address');
   const currency = get(message, 'meta.currency');
   return isLowerCaseMatch(address, accountAddress) && isLowerCaseMatch(currency, nativeCurrency);
+};
+
+// TODO
+const compoundReceived = message => (dispatch, getState) => {
+  const isValidMeta = dispatch(checkCompoundMeta(message));
+  if (!isValidMeta) return;
+
+  let compoundData = get(message, 'payload.earned_interest', []);
+  if (!compoundData.length) return;
+
+  // list of { asset_code, earned_interest }
+  const assetCodes = compoundData.map(item => item.asset_code);
+  console.log('asset codes', assetCodes);
+  const { accountAddress, nativeCurrency, network } = getState().settings;
+  // const compound = null; // TODO
+  const assetSocket = createSocket('assets');
+  assetSocket.on(messages.CONNECT, () => {
+    // TODO
+    assetSocket.emit(...getAssetData(assetCodes, nativeCurrency.toLowerCase(), 'get'));
+    dispatch(listenOnAssetMessages(assetSocket));
+  });
+
+  // saveLocalCompound(accountAddress, compound, network);
+  /*
+  dispatch({
+    payload: compound,
+    type: DATA_UPDATE_COMPOUND,
+  });
+  */
 };
 
 const transactionsReceived = message => (dispatch, getState) => {
@@ -306,6 +378,19 @@ const assetsReceived = (message, append = false, change = false) => (dispatch, g
   });
 };
 
+const listenOnAssetMessages = socket => (dispatch, getState) => {
+  socket.on('received assets', (message) => {
+    console.log('compound received assets', message);
+  });
+};
+
+const listenOnCompoundMessages = socket => (dispatch, getState) => {
+  socket.on(messages.COMPOUND.RECEIVED, (message) => {
+    console.log('compound received', message);
+    dispatch(compoundReceived(message));
+  });
+};
+
 const listenOnNewMessages = socket => (dispatch, getState) => {
   socket.on(messages.TRANSACTIONS.RECEIVED, (message) => {
     dispatch(transactionsReceived(message));
@@ -353,6 +438,7 @@ export const dataAddNewTransaction = txDetails => (dispatch, getState) => new Pr
 // -- Reducer ----------------------------------------- //
 const INITIAL_STATE = {
   addressSocket: null,
+  compoundSocket: null,
   assets: [],
   loadingAssets: false,
   loadingTransactions: false,
@@ -361,8 +447,12 @@ const INITIAL_STATE = {
 
 export default (state = INITIAL_STATE, action) => {
   switch (action.type) {
-  case DATA_UPDATE_ADDRESS_SOCKET:
-    return { ...state, addressSocket: action.payload };
+  case DATA_UPDATE_SOCKETS:
+    return {
+      ...state,
+      addressSocket: action.payload.addressSocket,
+      compoundSocket: action.payload.compoundSocket,
+    };
   case DATA_UPDATE_ASSETS:
     return { ...state, assets: action.payload };
   case DATA_UPDATE_TRANSACTIONS:
