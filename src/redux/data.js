@@ -13,7 +13,6 @@ import {
   slice,
   uniqBy,
 } from 'lodash';
-import { DATA_API_KEY, DATA_ORIGIN } from 'react-native-dotenv';
 import {
   getAssets,
   getLocalTransactions,
@@ -22,7 +21,17 @@ import {
   saveAssets,
   saveLocalTransactions,
 } from '../handlers/commonStorage';
-import io from 'socket.io-client'; import { parseAccountAssets } from '../parsers/accounts';
+import {
+  createSocket,
+  unsubscribeAddressData,
+  unsubscribeCompound,
+} from '../handlers/dataProvider/dataProvider';
+import {
+  addressPayload,
+  compoundPayload,
+  assetDataPayload,
+} from '../handlers/dataProvider/payloadTypes';
+import { parseAccountAssets } from '../parsers/accounts';
 import { parseNewTransaction } from '../parsers/newTransaction';
 import { parseTransactions } from '../parsers/transactions';
 import { getFamilies } from '../parsers/uniqueTokens';
@@ -69,53 +78,6 @@ const messages = {
 };
 
 // -- Actions ---------------------------------------- //
-
-const createSocket = endpoint => io(
-  `wss://api.zerion.io/${endpoint}?api_token=${DATA_API_KEY}`,
-  {
-    extraHeaders: { Origin: DATA_ORIGIN },
-    transports: ['websocket'],
-  },
-);
-
-/* eslint-disable camelcase */
-const addressSubscription = (address, currency, action = 'subscribe') => [
-  action,
-  {
-    payload: {
-      address,
-      currency,
-      transactions_limit: 1000,
-    },
-    scope: ['assets', 'transactions'],
-  },
-];
-/* eslint-disable camelcase */
-
-/* eslint-disable camelcase */
-const compoundSubscription = (address, action = 'subscribe') => [
-  action,
-  {
-    payload: {
-      address,
-    },
-    scope: ['earned_interest'],
-  },
-];
-/* eslint-disable camelcase */
-
-/* eslint-disable camelcase */
-const getAssetData = (assetCodes, currency, action = 'subscribe') => [
-  action,
-  {
-    payload: {
-      asset_codes: assetCodes,
-      currency,
-    },
-  },
-];
-/* eslint-disable camelcase */
-
 export const dataLoadState = () => async (dispatch, getState) => {
   const { accountAddress, network } = getState().settings;
   try {
@@ -143,18 +105,8 @@ export const dataLoadState = () => async (dispatch, getState) => {
 const dataUnsubscribe = () => (dispatch, getState) => {
   const { addressSocket, compoundSocket } = getState().data;
   const { accountAddress, nativeCurrency } = getState().settings;
-  if (!isNil(addressSocket)) {
-    addressSocket.emit(...addressSubscription(
-      accountAddress,
-      nativeCurrency.toLowerCase(),
-      'unsubscribe',
-    ));
-    addressSocket.close();
-  }
-  if (!isNil(compoundSocket)) {
-    compoundSocket.emit(...compoundSubscription(accountAddress, 'unsubscribe'));
-    compoundSocket.close();
-  }
+  unsubscribeAddressData(addressSocket, accountAddress, nativeCurrency);
+  unsubscribeCompound(addressSocket, accountAddress);
 };
 
 export const dataClearState = () => (dispatch, getState) => {
@@ -174,12 +126,11 @@ export const dataInit = () => (dispatch, getState) => {
     type: DATA_UPDATE_SOCKETS,
   });
   addressSocket.on(messages.CONNECT, () => {
-    addressSocket.emit(...addressSubscription(accountAddress, nativeCurrency.toLowerCase()));
+    addressSocket.emit(...addressPayload(accountAddress, nativeCurrency));
     dispatch(listenOnNewMessages(addressSocket));
   });
   compoundSocket.on(messages.CONNECT, () => {
-    console.log('subscribing to compound');
-    compoundSocket.emit(...compoundSubscription(accountAddress));
+    compoundSocket.emit(...compoundPayload(accountAddress));
     dispatch(listenOnCompoundMessages(compoundSocket));
   });
 };
@@ -247,25 +198,13 @@ const compoundReceived = message => (dispatch, getState) => {
   let compoundData = get(message, 'payload.earned_interest', []);
   if (!compoundData.length) return;
 
-  // list of { asset_code, earned_interest }
   const assetCodes = compoundData.map(item => item.asset_code);
-  console.log('asset codes', assetCodes);
   const { accountAddress, nativeCurrency, network } = getState().settings;
-  // const compound = null; // TODO
   const assetSocket = createSocket('assets');
   assetSocket.on(messages.CONNECT, () => {
-    // TODO
-    assetSocket.emit(...getAssetData(assetCodes, nativeCurrency.toLowerCase(), 'get'));
+    assetSocket.emit(...assetDataPayload(assetCodes, nativeCurrency.toLowerCase(), 'get'));
     dispatch(listenOnAssetMessages(assetSocket));
   });
-
-  // saveLocalCompound(accountAddress, compound, network);
-  /*
-  dispatch({
-    payload: compound,
-    type: DATA_UPDATE_COMPOUND,
-  });
-  */
 };
 
 const transactionsReceived = message => (dispatch, getState) => {
@@ -380,13 +319,13 @@ const assetsReceived = (message, append = false, change = false) => (dispatch, g
 
 const listenOnAssetMessages = socket => (dispatch, getState) => {
   socket.on('received assets', (message) => {
+    // TODO
     console.log('compound received assets', message);
   });
 };
 
 const listenOnCompoundMessages = socket => (dispatch, getState) => {
   socket.on(messages.COMPOUND.RECEIVED, (message) => {
-    console.log('compound received', message);
     dispatch(compoundReceived(message));
   });
 };
