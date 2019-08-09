@@ -127,7 +127,7 @@ export const dataInit = () => (dispatch, getState) => {
   });
   addressSocket.on(messages.CONNECT, () => {
     addressSocket.emit(...addressPayload(accountAddress, nativeCurrency));
-    dispatch(listenOnNewMessages(addressSocket));
+    dispatch(listenOnAddressMessages(addressSocket));
   });
   compoundSocket.on(messages.CONNECT, () => {
     compoundSocket.emit(...compoundPayload(accountAddress));
@@ -330,7 +330,7 @@ const listenOnCompoundMessages = socket => (dispatch, getState) => {
   });
 };
 
-const listenOnNewMessages = socket => (dispatch, getState) => {
+const listenOnAddressMessages = socket => (dispatch, getState) => {
   socket.on(messages.TRANSACTIONS.RECEIVED, (message) => {
     dispatch(transactionsReceived(message));
   });
