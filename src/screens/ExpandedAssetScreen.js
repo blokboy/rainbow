@@ -10,6 +10,7 @@ import TouchableBackdrop from '../components/TouchableBackdrop';
 import { withNeverRerender } from '../hoc';
 import { padding } from '../styles';
 import { deviceUtils, safeAreaInsetValues } from '../utils';
+import ChartExpandedState from '../components/expanded-state/ChartExpandedState';
 
 const {
   bottom: safeAreaBottom,
@@ -17,6 +18,7 @@ const {
 } = safeAreaInsetValues;
 
 const ScreenTypes = {
+  chart: ChartExpandedState,
   token: TokenExpandedState,
   unique_token: UniqueTokenExpandedState,
   uniswap: InvestmentExpandedState,
@@ -43,7 +45,7 @@ ExpandedAssetScreen.propTypes = {
   containerPadding: PropTypes.number.isRequired,
   onPressBackground: PropTypes.func,
   panelWidth: PropTypes.number,
-  type: PropTypes.oneOf(['token', 'unique_token', 'uniswap']),
+  type: PropTypes.oneOf(['token', 'unique_token', 'uniswap', 'chart']),
 };
 
 ExpandedAssetScreen.defaultProps = {

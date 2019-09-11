@@ -59,7 +59,7 @@ const balancesSkeletonRenderItem = item => (
     {...item}
   />
 );
-const balancesRenderItem = item => <TokenItem {...item} assetType="token" />;
+const balancesRenderItem = item => <TokenItem {...item} assetType="chart" />;
 const tokenFamilyItem = item => <TokenFamilyWrap {...item} uniqueId={item.uniqueId} />;
 const uniswapRenderItem = item => <UniswapCardItem {...item} assetType="uniswap" />;
 
