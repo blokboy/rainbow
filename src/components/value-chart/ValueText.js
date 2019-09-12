@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { Text } from 'react-native';
+import { colors, fonts } from '../../styles';
 
 
 class ValueText extends React.Component {
@@ -15,8 +16,11 @@ class ValueText extends React.Component {
 
   render() {
     return (
-      <Text>
-        {this.state.text}
+      <Text style={{
+        color: colors.white,
+        fontFamily: fonts.family.SFMono,
+      }}>
+        ${this.state.text}
       </Text>
     );
   }

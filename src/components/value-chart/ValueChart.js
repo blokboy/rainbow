@@ -12,11 +12,14 @@ import {
 import data from './data';
 import ValueText from './ValueText';
 import { Text, View } from 'react-native';
+import { deviceUtils } from '../../utils';
+import { fonts } from '../../styles';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const {
   or,
+  and,
   eq,
   add,
   sub,
@@ -30,6 +33,8 @@ const {
   call,
   set,
   multiply,
+  greaterOrEq,
+  lessThan,
 } = Animated;
 
 const {
@@ -41,7 +46,7 @@ const {
   UNDETERMINED,
 } = State;
 
-const width = 300;
+const width = deviceUtils.dimensions.width - 70;
 const height = 200;
 
 const timestampLength = data[data.length - 1].timestamp - data[0].timestamp;
@@ -58,6 +63,13 @@ const points = data.map(({ timestamp, value }) => ({
 
 const startDate = String(new Date(data[0].timestamp).toLocaleTimeString());
 const endDate = String(new Date(data[data.length - 1].timestamp).toLocaleTimeString());
+
+const overallDate = String(new Date(data[0].timestamp).toLocaleDateString('en-US', {
+  day: 'numeric',
+  month: 'short',
+  weekday: 'long',
+  year: 'numeric',
+}));
 
 console.log(points);
 
@@ -82,7 +94,7 @@ const pickImportantPoints = array => {
 export default class ValueChart extends PureComponent {
   _touchX = new Animated.Value(150);
 
-  onPanGestureEvent = event([{ nativeEvent: { x: this._touchX }}], { useNativeDriver: true });
+  onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this._touchX, x)) } }], { useNativeDriver: true });
 
   constructor(props) {
     super(props);
@@ -119,7 +131,7 @@ export default class ValueChart extends PureComponent {
       .filter(Boolean);
 
     const animatedPath = concat(
-      'M -100 100',
+      `M ${points[0].x} ${points[0].y}`,
       ...splinePoints.flatMap(({ x, y1, y2 }) => [
         'L',
         x,
@@ -135,12 +147,20 @@ export default class ValueChart extends PureComponent {
           shouldActivateOnStart={true}
           onGestureEvent={this.onPanGestureEvent}
           onHandlerStateChange={this.onGestureEvent}
-          shouldCancelWhenOutside={true}
         >
           <Animated.View style={{
             height: 150,
             justifyContent: 'center',
           }}>
+            <Text style={{
+              color: '#3c4252',
+              opacity: 0.5,
+              textAlign: 'center',
+              fontFamily: fonts.family.SFProDisplay,
+              marginBottom: 10,
+            }}>
+              {overallDate}
+            </Text>
             <Animated.View
               style={[{
                 alignItems: 'center',
@@ -148,11 +168,12 @@ export default class ValueChart extends PureComponent {
                 borderRadius: 12.5,
                 height: 25,
                 justifyContent: 'center',
-                marginBottom: 25,
-                width: 60,
+                marginBottom: 8,
+                width: 100,
+                top: 0,
               }, {
                 opacity: this.opacity,
-                transform: [{ translateX: Animated.add(this._touchX, new Animated.Value(-30)) }],
+                transform: [{ translateX: Animated.add((width / 2) - 50, multiply(sub(this._touchX, width / 2), 0.8)) }],
               }]}
             >
               <ValueText
@@ -162,10 +183,11 @@ export default class ValueChart extends PureComponent {
             <Animated.View
               style={[{
                 backgroundColor: 'rgb(85, 195, 249)',
-                height: 250,
+                height: 195,
                 position: 'absolute',
-                top: -25,
+                top: -11.5,
                 width: 3,
+                zIndex: 10,
               }, {
                 opacity: this.opacity,
                 transform: [{ translateX: Animated.add(this._touchX, new Animated.Value(-1.5)) }],
@@ -181,22 +203,22 @@ export default class ValueChart extends PureComponent {
               <Path
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
-                d="M0 0 L300 0"
+                d={`M0 0 L${width} 0`}
               />
               <Path
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
-                d="M0 66.6 L300 66.6"
+                d={`M0 66 L${width} 66`}
               />
               <Path
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
-                d="M0 133.2 L300 133.2"
+                d={`M0 133 L${width} 133`}
               />
               <Path
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
-                d="M0 200 L300 200"
+                d={`M0 200 L${width} 200`}
               />
               <AnimatedPath
                 id="main-path"
@@ -208,13 +230,25 @@ export default class ValueChart extends PureComponent {
               />
             </Svg>
             <View style={{
+              flexDirection: 'row',
               justifyContent: 'space-between',
-              
             }}>
-              <Text>
+              <Text style={{
+                color: '#3c4252',
+                opacity: 0.5,
+                flex: 1,
+                textAlign: 'left',
+                fontFamily: fonts.family.SFProDisplay,
+              }}>
                 {startDate}
               </Text>
-              <Text>
+              <Text style={{
+                color: '#3c4252',
+                opacity: 0.5,
+                flex: 1,
+                textAlign: 'right',
+                fontFamily: fonts.family.SFProDisplay,
+              }}>
                 {endDate}
               </Text>
             </View>
@@ -234,7 +268,7 @@ export default class ValueChart extends PureComponent {
               onChange(
                 this._touchX,
                 call([this._touchX], ([x]) => {
-                  this._text.updateValue(data[Math.floor(x / 2)].value);
+                  this._text.updateValue(data[Math.floor(x / (width / data.length))].value);
                 }),
               ),
               set(

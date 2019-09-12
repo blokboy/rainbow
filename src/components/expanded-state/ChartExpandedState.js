@@ -16,7 +16,7 @@ import FloatingPanels from './FloatingPanels';
 import ValueChart from '../value-chart/ValueChart';
 
 const ChartContainer = styled.View`
-  height: 330px;
+  height: 320px;
   border-radius: 20;
   justify-content: center;
   align-items: center;
