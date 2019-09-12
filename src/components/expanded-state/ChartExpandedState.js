@@ -11,12 +11,12 @@ import {
 import styled from 'styled-components/primitives';
 import { withAccountData, withAccountSettings } from '../../hoc';
 import { ethereumUtils } from '../../utils';
-import { AssetPanel } from './asset-panel';
+import { AssetPanel, AssetPanelHeader } from './asset-panel';
 import FloatingPanels from './FloatingPanels';
 import ValueChart from '../value-chart/ValueChart';
 
 const ChartContainer = styled.View`
-  height: 250px;
+  height: 330px;
   border-radius: 20;
   justify-content: center;
   align-items: center;
@@ -31,6 +31,11 @@ const TokenExpandedState = ({
 }) => (
   <FloatingPanels>
     <AssetPanel>
+      <AssetPanelHeader
+        price={price}
+        subtitle={subtitle}
+        title={title}
+      />
       <ChartContainer>
         <ValueChart />
       </ChartContainer>

@@ -10,6 +10,8 @@ import {
   runTiming,
 } from 'react-native-redash';
 import data from './data';
+import ValueText from './ValueText';
+import { Text, View } from 'react-native';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -18,12 +20,9 @@ const {
   eq,
   add,
   sub,
+  onChange,
   Value,
   Clock,
-  clockRunning,
-  createAnimatedComponent,
-  stopClock,
-  startClock,
   block,
   event,
   concat,
@@ -31,7 +30,6 @@ const {
   call,
   set,
   multiply,
-  timing,
 } = Animated;
 
 const {
@@ -42,14 +40,6 @@ const {
   FAILED,
   UNDETERMINED,
 } = State;
-
-const AnimatedRawButton = createNativeWrapper(
-  createAnimatedComponent(PureNativeButton),
-  {
-    shouldActivateOnStart: true,
-    shouldCancelWhenOutside: false,
-  },
-);
 
 const width = 300;
 const height = 200;
@@ -63,25 +53,36 @@ const yMultiply = height / (maxValue.value - minValue.value);
 
 const points = data.map(({ timestamp, value }) => ({
   x: (timestamp - data[0].timestamp) * xMultiply,
-  y: value * yMultiply,
+  y: (value - minValue.value) * yMultiply,
 }));
+
+const startDate = String(new Date(data[0].timestamp).toLocaleTimeString());
+const endDate = String(new Date(data[data.length - 1].timestamp).toLocaleTimeString());
+
+console.log(points);
 
 const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
 
 // TODO: replace with a better algorithm.
 const pickImportantPoints = array => {
   const result = [];
-  for (let i = 0; i < array.length; i += 40) {
-    result.push(array[i]);
-  }
+  // for (let i = 0; i < array.length; i += 30) {
+  //   result.push(array[i]);
+  // }
+  result.push(array[0]);
+  result.push(array[25]);
+  result.push(array[39]);
+  result.push(array[68]);
+  result.push(array[100]);
+  result.push(array[125]);
   result.push(array[array.length - 1]);
   return result;
 };
 
 export default class ValueChart extends PureComponent {
-  _touchX = new Animated.Value(300 / 2 - 30);
+  _touchX = new Animated.Value(150);
 
-  onPanGestureEvent = Animated.event([{ nativeEvent: { x: this._touchX }}], { useNativeDriver: true });
+  onPanGestureEvent = event([{ nativeEvent: { x: this._touchX }}], { useNativeDriver: true });
 
   constructor(props) {
     super(props);
@@ -106,6 +107,7 @@ export default class ValueChart extends PureComponent {
   render() {
     const importantPoints = pickImportantPoints(points);
     const spline = new Bezier(importantPoints.map(({ x, y }) => [x, y]));
+    console.log(spline);
     const splinePoints = points
       .map(({ x, y }) => {
         const matchingPoints = spline.getPoints(0, x);
@@ -117,7 +119,7 @@ export default class ValueChart extends PureComponent {
       .filter(Boolean);
 
     const animatedPath = concat(
-      'M 0 0',
+      'M -100 100',
       ...splinePoints.flatMap(({ x, y1, y2 }) => [
         'L',
         x,
@@ -133,6 +135,7 @@ export default class ValueChart extends PureComponent {
           shouldActivateOnStart={true}
           onGestureEvent={this.onPanGestureEvent}
           onHandlerStateChange={this.onGestureEvent}
+          shouldCancelWhenOutside={true}
         >
           <Animated.View style={{
             height: 150,
@@ -140,7 +143,29 @@ export default class ValueChart extends PureComponent {
           }}>
             <Animated.View
               style={[{
-                backgroundColor: 'rgb(85, 195, 249)', height: 300, width: 3, position: 'absolute',
+                alignItems: 'center',
+                backgroundColor: 'rgb(85, 195, 249)',
+                borderRadius: 12.5,
+                height: 25,
+                justifyContent: 'center',
+                marginBottom: 25,
+                width: 60,
+              }, {
+                opacity: this.opacity,
+                transform: [{ translateX: Animated.add(this._touchX, new Animated.Value(-30)) }],
+              }]}
+            >
+              <ValueText
+                ref={component => this._text = component}
+              />
+            </Animated.View>
+            <Animated.View
+              style={[{
+                backgroundColor: 'rgb(85, 195, 249)',
+                height: 250,
+                position: 'absolute',
+                top: -25,
+                width: 3,
               }, {
                 opacity: this.opacity,
                 transform: [{ translateX: Animated.add(this._touchX, new Animated.Value(-1.5)) }],
@@ -149,17 +174,50 @@ export default class ValueChart extends PureComponent {
             <Svg
               height={200}
               width={width}
-              viewBox={`0 0 ${width} ${height}`}
+              viewBox={`0 -15 ${width} ${height + 30}`}
               preserveAspectRatio="none"
               style={flipY}
             >
+              <Path
+                strokeWidth={1.5}
+                stroke="rgb(240,240,240)"
+                d="M0 0 L300 0"
+              />
+              <Path
+                strokeWidth={1.5}
+                stroke="rgb(240,240,240)"
+                d="M0 66.6 L300 66.6"
+              />
+              <Path
+                strokeWidth={1.5}
+                stroke="rgb(240,240,240)"
+                d="M0 133.2 L300 133.2"
+              />
+              <Path
+                strokeWidth={1.5}
+                stroke="rgb(240,240,240)"
+                d="M0 200 L300 200"
+              />
               <AnimatedPath
+                id="main-path"
                 fill="none"
                 stroke="rgb(85, 195, 249)"
                 strokeWidth={2}
+                strokeLinejoin="round"
                 d={animatedPath}
               />
             </Svg>
+            <View style={{
+              justifyContent: 'space-between',
+              
+            }}>
+              <Text>
+                {startDate}
+              </Text>
+              <Text>
+                {endDate}
+              </Text>
+            </View>
           </Animated.View>
         </PanGestureHandler>
         <Animated.Code
@@ -172,6 +230,12 @@ export default class ValueChart extends PureComponent {
               cond(
                 contains([FAILED, CANCELLED, END], this.gestureState),
                 set(this.shouldSpring, 0),
+              ),
+              onChange(
+                this._touchX,
+                call([this._touchX], ([x]) => {
+                  this._text.updateValue(data[Math.floor(x / 2)].value);
+                }),
               ),
               set(
                 this.value,
