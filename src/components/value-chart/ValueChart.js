@@ -9,7 +9,7 @@ import {
   runTiming,
 } from 'react-native-redash';
 import { Text, View } from 'react-native';
-import data from './data';
+import { data1, data2 } from './data';
 import ValueText from './ValueText';
 import { deviceUtils } from '../../utils';
 import { fonts } from '../../styles';
@@ -52,28 +52,6 @@ const TRUE = 0;
 const width = deviceUtils.dimensions.width - 70;
 const height = 200;
 
-const timestampLength = data[data.length - 1].timestamp - data[0].timestamp;
-const xMultiply = width / timestampLength;
-
-const maxValue = maxBy(data, 'value');
-const minValue = minBy(data, 'value');
-const yMultiply = height / (maxValue.value - minValue.value);
-
-const points = data.map(({ timestamp, value }) => ({
-  x: (timestamp - data[0].timestamp) * xMultiply,
-  y: (value - minValue.value) * yMultiply,
-}));
-
-const startDate = String(new Date(data[0].timestamp).toLocaleTimeString());
-const endDate = String(new Date(data[data.length - 1].timestamp).toLocaleTimeString());
-
-const overallDate = String(new Date(data[0].timestamp).toLocaleDateString('en-US', {
-  day: 'numeric',
-  month: 'short',
-  weekday: 'long',
-  year: 'numeric',
-}));
-
 const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
 
 // TODO: replace with a better algorithm.
@@ -98,6 +76,10 @@ export default class ValueChart extends PureComponent {
   constructor(props) {
     super(props);
 
+    this.state = {
+      data: data1,
+    };
+
     this.clock = new Clock();
     this.clockReversed = new Clock();
     this.opacityClock = new Clock();
@@ -108,7 +90,7 @@ export default class ValueChart extends PureComponent {
     this.handle = undefined;
     this.value = new Value(1);
     this.opacity = new Value(0);
-    this.shouldSpring = new Value(-1);
+    this.shouldSpring = new Value(0);
     this.isLoading = new Value(FALSE);
 
     this.x0 = new Value(100);
@@ -122,14 +104,47 @@ export default class ValueChart extends PureComponent {
 
   onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this.touchX, x)) } }], { useNativeDriver: true });
 
-  reloadChart = () => {
+  reloadChart = (data) => {
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
+      this.setState({ data });
+    }, 700);
+    setTimeout(() => {
       this.isLoading.setValue(FALSE);
-    }, 1500);
+    }, 1400);
+  }
+
+  reloadChartToDay = () => {
+    this.reloadChart(data1);
+  }
+
+  reloadChartToWeek = () => {
+    this.reloadChart(data2);
   }
 
   render() {
+    const timestampLength = this.state.data[this.state.data.length - 1].timestamp - this.state.data[0].timestamp;
+    const xMultiply = width / timestampLength;
+
+    const maxValue = maxBy(this.state.data, 'value');
+    const minValue = minBy(this.state.data, 'value');
+    const yMultiply = height / (maxValue.value - minValue.value);
+
+    const points = this.state.data.map(({ timestamp, value }) => ({
+      x: (timestamp - this.state.data[0].timestamp) * xMultiply,
+      y: (value - minValue.value) * yMultiply,
+    }));
+
+    const startDate = String(new Date(this.state.data[0].timestamp).toLocaleTimeString());
+    const endDate = String(new Date(this.state.data[this.state.data.length - 1].timestamp).toLocaleTimeString());
+
+    const overallDate = String(new Date(this.state.data[0].timestamp).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      weekday: 'long',
+      year: 'numeric',
+    }));
+
     const importantPoints = pickImportantPoints(points);
     const spline = new Bezier(importantPoints.map(({ x, y }) => [x, y]));
     const splinePoints = points
@@ -164,15 +179,17 @@ export default class ValueChart extends PureComponent {
             height: 150,
             justifyContent: 'center',
           }}>
-            <Text style={{
+            <Animated.Text style={[{
               color: '#3c4252',
               opacity: 0.5,
               textAlign: 'center',
               fontFamily: fonts.family.SFProDisplay,
               marginBottom: 10,
-            }}>
+            }, {
+              opacity: this.loadingValue,
+            }]}>
               {overallDate}
-            </Text>
+            </Animated.Text>
             <Animated.View
               style={[{
                 alignItems: 'center',
@@ -197,7 +214,7 @@ export default class ValueChart extends PureComponent {
                 backgroundColor: 'rgb(85, 195, 249)',
                 height: 195,
                 position: 'absolute',
-                top: -11.5,
+                top: -35,
                 width: 3,
                 zIndex: 10,
               }, {
@@ -241,10 +258,12 @@ export default class ValueChart extends PureComponent {
                 d={animatedPath}
               />
             </Svg>
-            <View style={{
+            <Animated.View style={[{
               flexDirection: 'row',
               justifyContent: 'space-between',
-            }}>
+            }, {
+              opacity: this.loadingValue,
+            }]}>
               <Text style={{
                 color: '#3c4252',
                 opacity: 0.5,
@@ -263,11 +282,16 @@ export default class ValueChart extends PureComponent {
               }}>
                 {endDate}
               </Text>
-            </View>
-            <View>
-              <ButtonPressAnimation onPress={this.reloadChart}>
-                <Text>
-                  Reload
+            </Animated.View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', margin: 15 }}>
+              <ButtonPressAnimation onPress={this.reloadChartToDay} style={{width: 50}}>
+                <Text style={{ color: this.state.data === data1 ? 'rgb(85, 195, 249)' : '#3c4252' }}>
+                  Day
+                </Text>
+              </ButtonPressAnimation>
+              <ButtonPressAnimation onPress={this.reloadChartToWeek}>
+                <Text style={{ color: this.state.data === data2 ? 'rgb(85, 195, 249)' : '#3c4252' }}>
+                  Week
                 </Text>
               </ButtonPressAnimation>
             </View>
@@ -287,7 +311,7 @@ export default class ValueChart extends PureComponent {
               onChange(
                 this.touchX,
                 call([this.touchX], ([x]) => {
-                  this._text.updateValue(data[Math.floor(x / (width / data.length))].value);
+                  this._text.updateValue(this.state.data[Math.floor(x / (width / this.state.data.length))].value);
                 }),
               ),
               cond(
