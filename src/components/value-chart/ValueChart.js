@@ -1,24 +1,23 @@
 import React, { Fragment, PureComponent } from 'react';
 import { maxBy, minBy } from 'lodash';
 import Svg, { Path } from 'react-native-svg';
-import { PanGestureHandler, createNativeWrapper, PureNativeButton, State, TapGestureHandler } from 'react-native-gesture-handler';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, { Easing } from 'react-native-reanimated';
 import Bezier from 'bezier-spline';
 import {
   contains,
-  runDelay,
   runTiming,
 } from 'react-native-redash';
+import { Text, View } from 'react-native';
 import data from './data';
 import ValueText from './ValueText';
-import { Text, View } from 'react-native';
 import { deviceUtils } from '../../utils';
 import { fonts } from '../../styles';
+import { ButtonPressAnimation } from '../animations';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const {
-  or,
   and,
   eq,
   add,
@@ -35,16 +34,20 @@ const {
   multiply,
   greaterOrEq,
   lessThan,
+  greaterThan,
+  stopClock,
 } = Animated;
 
 const {
-  ACTIVE,
   BEGAN,
   CANCELLED,
   END,
   FAILED,
   UNDETERMINED,
 } = State;
+
+const FALSE = 1;
+const TRUE = 0;
 
 const width = deviceUtils.dimensions.width - 70;
 const height = 200;
@@ -71,8 +74,6 @@ const overallDate = String(new Date(data[0].timestamp).toLocaleDateString('en-US
   year: 'numeric',
 }));
 
-console.log(points);
-
 const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
 
 // TODO: replace with a better algorithm.
@@ -92,20 +93,23 @@ const pickImportantPoints = array => {
 };
 
 export default class ValueChart extends PureComponent {
-  _touchX = new Animated.Value(150);
-
-  onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this._touchX, x)) } }], { useNativeDriver: true });
+  touchX = new Value(150);
 
   constructor(props) {
     super(props);
 
     this.clock = new Clock();
+    this.clockReversed = new Clock();
     this.opacityClock = new Clock();
+    this.opacityClockReversed = new Clock();
+    this.loadingClock = new Clock();
+    this.loadingValue = new Value(1);
     this.gestureState = new Value(UNDETERMINED);
     this.handle = undefined;
     this.value = new Value(1);
     this.opacity = new Value(0);
     this.shouldSpring = new Value(-1);
+    this.isLoading = new Value(FALSE);
 
     this.x0 = new Value(100);
 
@@ -116,10 +120,18 @@ export default class ValueChart extends PureComponent {
     }]);
   }
 
+  onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this.touchX, x)) } }], { useNativeDriver: true });
+
+  reloadChart = () => {
+    this.isLoading.setValue(TRUE);
+    setTimeout(() => {
+      this.isLoading.setValue(FALSE);
+    }, 1500);
+  }
+
   render() {
     const importantPoints = pickImportantPoints(points);
     const spline = new Bezier(importantPoints.map(({ x, y }) => [x, y]));
-    console.log(spline);
     const splinePoints = points
       .map(({ x, y }) => {
         const matchingPoints = spline.getPoints(0, x);
@@ -131,12 +143,12 @@ export default class ValueChart extends PureComponent {
       .filter(Boolean);
 
     const animatedPath = concat(
-      `M ${points[0].x} ${points[0].y}`,
+      `M -10000 ${points[0].y}`,
       ...splinePoints.flatMap(({ x, y1, y2 }) => [
         'L',
         x,
         ' ',
-        add(y1, multiply(this.value, sub(y2, y1))),
+        multiply(add(y1, multiply(this.value, sub(y2, y1))), this.loadingValue),
       ]),
     );
 
@@ -169,11 +181,11 @@ export default class ValueChart extends PureComponent {
                 height: 25,
                 justifyContent: 'center',
                 marginBottom: 8,
-                width: 100,
                 top: 0,
+                width: 100,
               }, {
                 opacity: this.opacity,
-                transform: [{ translateX: Animated.add((width / 2) - 50, multiply(sub(this._touchX, width / 2), 0.8)) }],
+                transform: [{ translateX: Animated.add((width / 2) - 50, multiply(sub(this.touchX, width / 2), 0.8)) }],
               }]}
             >
               <ValueText
@@ -190,7 +202,7 @@ export default class ValueChart extends PureComponent {
                 zIndex: 10,
               }, {
                 opacity: this.opacity,
-                transform: [{ translateX: Animated.add(this._touchX, new Animated.Value(-1.5)) }],
+                transform: [{ translateX: Animated.add(this.touchX, new Animated.Value(-1.5)) }],
               }]}
             />
             <Svg
@@ -252,13 +264,20 @@ export default class ValueChart extends PureComponent {
                 {endDate}
               </Text>
             </View>
+            <View>
+              <ButtonPressAnimation onPress={this.reloadChart}>
+                <Text>
+                  Reload
+                </Text>
+              </ButtonPressAnimation>
+            </View>
           </Animated.View>
         </PanGestureHandler>
         <Animated.Code
           exec={
             block([
               cond(
-                or(eq(this.gestureState, ACTIVE), eq(this.gestureState, BEGAN)),
+                eq(this.gestureState, BEGAN),
                 set(this.shouldSpring, 1),
               ),
               cond(
@@ -266,26 +285,77 @@ export default class ValueChart extends PureComponent {
                 set(this.shouldSpring, 0),
               ),
               onChange(
-                this._touchX,
-                call([this._touchX], ([x]) => {
+                this.touchX,
+                call([this.touchX], ([x]) => {
                   this._text.updateValue(data[Math.floor(x / (width / data.length))].value);
                 }),
               ),
-              set(
-                this.value,
-                runTiming(this.clock, this.value, {
-                  duration: 350,
-                  easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-                  toValue: cond(eq(this.shouldSpring, 1), 0, 1),
-                }),
+              cond(
+                and(greaterThan(this.value, 0), eq(this.shouldSpring, 1)),
+                block([
+                  set(
+                    this.value,
+                    runTiming(this.clock, this.value, {
+                      duration: 350,
+                      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                      toValue: 0,
+                    }),
+                  ),
+                  stopClock(this.clockReversed),
+                ]),
+                cond(
+                  and(lessThan(this.value, 1), eq(this.shouldSpring, 0)),
+                  block([
+                    set(
+                      this.value,
+                      runTiming(this.clockReversed, this.value, {
+                        duration: 350,
+                        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                        toValue: 1,
+                      }),
+                    ),
+                    stopClock(this.clock),
+                  ]),
+                ),
               ),
-              set(
-                this.opacity,
-                runTiming(this.opacityClock, this.opacity, {
-                  duration: 500,
-                  easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-                  toValue: cond(eq(this.shouldSpring, 1), 1, 0),
-                }),
+              cond(
+                and(lessThan(this.opacity, 1), eq(this.shouldSpring, 1)),
+                block([
+                  set(
+                    this.opacity,
+                    runTiming(this.opacityClock, this.opacity, {
+                      duration: 500,
+                      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                      toValue: 1,
+                    }),
+                  ),
+                  stopClock(this.opacityClockReversed),
+                ]),
+                cond(
+                  and(greaterThan(this.opacity, 0), eq(this.shouldSpring, 0)),
+                  block([
+                    set(
+                      this.opacity,
+                      runTiming(this.opacityClockReversed, this.opacity, {
+                        duration: 500,
+                        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                        toValue: 0,
+                      }),
+                    ),
+                    stopClock(this.opacityClock),
+                  ]),
+                ),
+              ),
+              cond(
+                this.shouldSpring, 0,
+                set(
+                  this.loadingValue,
+                  runTiming(this.loadingClock, this.loadingValue, {
+                    duration: 500,
+                    easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                    toValue: cond(eq(this.isLoading, 1), 1, 0),
+                  }),
+                ),
               ),
             ])
           }
