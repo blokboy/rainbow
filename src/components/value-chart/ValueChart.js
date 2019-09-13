@@ -9,8 +9,9 @@ import {
   runTiming,
 } from 'react-native-redash';
 import { Text, View } from 'react-native';
-import { data1, data2 } from './data';
+import { data1, data2, data3, data4 } from './data';
 import ValueText from './ValueText';
+import DateText from './DateText';
 import { deviceUtils } from '../../utils';
 import { fonts } from '../../styles';
 import { ButtonPressAnimation } from '../animations';
@@ -57,16 +58,22 @@ const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
 // TODO: replace with a better algorithm.
 const pickImportantPoints = array => {
   const result = [];
-  // for (let i = 0; i < array.length; i += 30) {
-  //   result.push(array[i]);
-  // }
   result.push(array[0]);
-  result.push(array[25]);
-  result.push(array[39]);
-  result.push(array[68]);
-  result.push(array[100]);
-  result.push(array[125]);
-  result.push(array[array.length - 1]);
+  let thresholdIndex = 15;
+  let thresholdHeight = array[0].y;
+  for (let i = 0; i < array.length; i++) {
+    if (i === array.length - 1) {
+      result.push(array[array.length - 1]);
+    } else if (Math.abs(thresholdHeight - array[i].y) > 40) {
+      result.push(array[i]);
+      thresholdIndex = i + 15;
+      thresholdHeight = array[i].y;
+    } else if (i === thresholdIndex) {
+      result.push(array[i]);
+      thresholdIndex += 35;
+      thresholdHeight = array[i].y;
+    }
+  }
   return result;
 };
 
@@ -108,10 +115,10 @@ export default class ValueChart extends PureComponent {
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
       this.setState({ data });
-    }, 700);
+    }, 500);
     setTimeout(() => {
       this.isLoading.setValue(FALSE);
-    }, 1400);
+    }, 1600);
   }
 
   reloadChartToDay = () => {
@@ -120,6 +127,14 @@ export default class ValueChart extends PureComponent {
 
   reloadChartToWeek = () => {
     this.reloadChart(data2);
+  }
+
+  reloadChartToMonth = () => {
+    this.reloadChart(data3);
+  }
+
+  reloadChartToYear = () => {
+    this.reloadChart(data4);
   }
 
   render() {
@@ -163,8 +178,26 @@ export default class ValueChart extends PureComponent {
         'L',
         x,
         ' ',
-        multiply(add(y1, multiply(this.value, sub(y2, y1))), this.loadingValue),
+        add(multiply(add(y1, multiply(this.value, sub(y2, y1))), this.loadingValue), sub(100, multiply(100, this.loadingValue))),
       ]),
+    );
+
+    const animatedBackPathUp = concat(
+      'M0 ',
+      sub(200, multiply(66, this.loadingValue)),
+      ' L ',
+      width,
+      ' ',
+      sub(200, multiply(66, this.loadingValue)),
+    );
+
+    const animatedBackPathDown = concat(
+      'M0 ',
+      multiply(66, this.loadingValue),
+      ' L ',
+      width,
+      ' ',
+      multiply(66, this.loadingValue),
     );
 
     return (
@@ -212,9 +245,9 @@ export default class ValueChart extends PureComponent {
             <Animated.View
               style={[{
                 backgroundColor: 'rgb(85, 195, 249)',
-                height: 195,
+                height: 200,
                 position: 'absolute',
-                top: -35,
+                top: -11.5,
                 width: 3,
                 zIndex: 10,
               }, {
@@ -229,26 +262,26 @@ export default class ValueChart extends PureComponent {
               preserveAspectRatio="none"
               style={flipY}
             >
-              <Path
+              {/* <Path
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
                 d={`M0 0 L${width} 0`}
               />
-              <Path
+              <AnimatedPath
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
-                d={`M0 66 L${width} 66`}
+                d={animatedBackPathUp}
               />
-              <Path
+              <AnimatedPath
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
-                d={`M0 133 L${width} 133`}
+                d={animatedBackPathDown}
               />
               <Path
                 strokeWidth={1.5}
                 stroke="rgb(240,240,240)"
                 d={`M0 200 L${width} 200`}
-              />
+              /> */}
               <AnimatedPath
                 id="main-path"
                 fill="none"
@@ -262,7 +295,7 @@ export default class ValueChart extends PureComponent {
               flexDirection: 'row',
               justifyContent: 'space-between',
             }, {
-              opacity: this.loadingValue,
+              opacity: multiply(this.loadingValue, this.value),
             }]}>
               <Text style={{
                 color: '#3c4252',
@@ -283,20 +316,43 @@ export default class ValueChart extends PureComponent {
                 {endDate}
               </Text>
             </Animated.View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', margin: 15 }}>
-              <ButtonPressAnimation onPress={this.reloadChartToDay} style={{width: 50}}>
-                <Text style={{ color: this.state.data === data1 ? 'rgb(85, 195, 249)' : '#3c4252' }}>
-                  Day
-                </Text>
-              </ButtonPressAnimation>
-              <ButtonPressAnimation onPress={this.reloadChartToWeek}>
-                <Text style={{ color: this.state.data === data2 ? 'rgb(85, 195, 249)' : '#3c4252' }}>
-                  Week
-                </Text>
-              </ButtonPressAnimation>
-            </View>
+            <Animated.View
+              style={[{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                marginTop: -17,
+              }, {
+                opacity: this.opacity,
+              }]}
+            >
+              <DateText
+                ref={component => this._date = component}
+              />
+            </Animated.View>
           </Animated.View>
         </PanGestureHandler>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginLeft: 15, marginRight: 15, top: 65 }}>
+          <ButtonPressAnimation onPress={this.reloadChartToDay} style={{width: 50}}>
+            <Text style={{ color: this.state.data === data1 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+              Day
+            </Text>
+          </ButtonPressAnimation>
+          <ButtonPressAnimation onPress={this.reloadChartToWeek} style={{width: 50}}>
+            <Text style={{ color: this.state.data === data2 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+              Week
+            </Text>
+          </ButtonPressAnimation>
+          <ButtonPressAnimation onPress={this.reloadChartToMonth} style={{width: 50}}>
+            <Text style={{ color: this.state.data === data3 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+              Month
+            </Text>
+          </ButtonPressAnimation>
+          <ButtonPressAnimation onPress={this.reloadChartToYear} style={{width: 50}}>
+            <Text style={{ color: this.state.data === data4 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+              Year
+            </Text>
+          </ButtonPressAnimation>
+        </View>
         <Animated.Code
           exec={
             block([
@@ -312,6 +368,8 @@ export default class ValueChart extends PureComponent {
                 this.touchX,
                 call([this.touchX], ([x]) => {
                   this._text.updateValue(this.state.data[Math.floor(x / (width / this.state.data.length))].value);
+                  this._date.updateValue(String(new Date(this.state.data[Math.floor(x / (width / this.state.data.length))].timestamp).toLocaleTimeString()));
+                  
                 }),
               ),
               cond(
