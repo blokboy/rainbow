@@ -55,22 +55,24 @@ const height = 200;
 
 const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
 
-// TODO: replace with a better algorithm.
+const indexInterval = 10;
+const heightInterval = 30;
+
 const pickImportantPoints = array => {
   const result = [];
   result.push(array[0]);
-  let thresholdIndex = 15;
+  let thresholdIndex = indexInterval;
   let thresholdHeight = array[0].y;
   for (let i = 0; i < array.length; i++) {
     if (i === array.length - 1) {
-      result.push(array[array.length - 1]);
-    } else if (Math.abs(thresholdHeight - array[i].y) > 40) {
       result.push(array[i]);
-      thresholdIndex = i + 15;
+    } else if (Math.abs(thresholdHeight - array[i].y) > heightInterval) {
+      result.push(array[i]);
+      thresholdIndex = i + indexInterval;
       thresholdHeight = array[i].y;
     } else if (i === thresholdIndex) {
       result.push(array[i]);
-      thresholdIndex += 35;
+      thresholdIndex += indexInterval;
       thresholdHeight = array[i].y;
     }
   }
@@ -115,7 +117,7 @@ export default class ValueChart extends PureComponent {
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
       this.setState({ data });
-    }, 500);
+    }, 600);
     setTimeout(() => {
       this.isLoading.setValue(FALSE);
     }, 1600);
@@ -173,7 +175,8 @@ export default class ValueChart extends PureComponent {
       .filter(Boolean);
 
     const animatedPath = concat(
-      `M -10000 ${points[0].y}`,
+      'M 2 ',
+      add(multiply(add(splinePoints[0].y1, multiply(this.value, sub(splinePoints[0].y2, splinePoints[0].y1))), this.loadingValue), sub(100, multiply(100, this.loadingValue))),
       ...splinePoints.flatMap(({ x, y1, y2 }) => [
         'L',
         x,
@@ -258,7 +261,7 @@ export default class ValueChart extends PureComponent {
             <Svg
               height={200}
               width={width}
-              viewBox={`0 -15 ${width} ${height + 30}`}
+              viewBox={`0 -30 ${width + 1} ${height + 40}`}
               preserveAspectRatio="none"
               style={flipY}
             >
@@ -288,6 +291,7 @@ export default class ValueChart extends PureComponent {
                 stroke="rgb(85, 195, 249)"
                 strokeWidth={2}
                 strokeLinejoin="round"
+                strokeLinecap="round"
                 d={animatedPath}
               />
             </Svg>
