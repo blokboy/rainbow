@@ -15,6 +15,7 @@ import DateText from './DateText';
 import { deviceUtils } from '../../utils';
 import { fonts } from '../../styles';
 import { ButtonPressAnimation } from '../animations';
+import ValueTime from './ValueTime';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -185,24 +186,6 @@ export default class ValueChart extends PureComponent {
       ]),
     );
 
-    const animatedBackPathUp = concat(
-      'M0 ',
-      sub(200, multiply(66, this.loadingValue)),
-      ' L ',
-      width,
-      ' ',
-      sub(200, multiply(66, this.loadingValue)),
-    );
-
-    const animatedBackPathDown = concat(
-      'M0 ',
-      multiply(66, this.loadingValue),
-      ' L ',
-      width,
-      ' ',
-      multiply(66, this.loadingValue),
-    );
-
     return (
       <Fragment>
         <PanGestureHandler
@@ -265,26 +248,6 @@ export default class ValueChart extends PureComponent {
               preserveAspectRatio="none"
               style={flipY}
             >
-              {/* <Path
-                strokeWidth={1.5}
-                stroke="rgb(240,240,240)"
-                d={`M0 0 L${width} 0`}
-              />
-              <AnimatedPath
-                strokeWidth={1.5}
-                stroke="rgb(240,240,240)"
-                d={animatedBackPathUp}
-              />
-              <AnimatedPath
-                strokeWidth={1.5}
-                stroke="rgb(240,240,240)"
-                d={animatedBackPathDown}
-              />
-              <Path
-                strokeWidth={1.5}
-                stroke="rgb(240,240,240)"
-                d={`M0 200 L${width} 200`}
-              /> */}
               <AnimatedPath
                 id="main-path"
                 fill="none"
@@ -336,25 +299,25 @@ export default class ValueChart extends PureComponent {
           </Animated.View>
         </PanGestureHandler>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginLeft: 15, marginRight: 15, top: 65 }}>
-          <ButtonPressAnimation onPress={this.reloadChartToDay} style={{width: 50}}>
-            <Text style={{ color: this.state.data === data1 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+          <ButtonPressAnimation onPress={this.reloadChartToDay}>
+            <ValueTime selected={this.state.data === data1}>
               Day
-            </Text>
+            </ValueTime>
           </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToWeek} style={{width: 50}}>
-            <Text style={{ color: this.state.data === data2 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+          <ButtonPressAnimation onPress={this.reloadChartToWeek}>
+            <ValueTime selected={this.state.data === data2}>
               Week
-            </Text>
+            </ValueTime>
           </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToMonth} style={{width: 50}}>
-            <Text style={{ color: this.state.data === data3 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+          <ButtonPressAnimation onPress={this.reloadChartToMonth}>
+            <ValueTime selected={this.state.data === data3}>
               Month
-            </Text>
+            </ValueTime>
           </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToYear} style={{width: 50}}>
-            <Text style={{ color: this.state.data === data4 ? 'rgb(85, 195, 249)' : '#3c4252', textAlign: 'center', lineHeight: 47 }}>
+          <ButtonPressAnimation onPress={this.reloadChartToYear}>
+            <ValueTime selected={this.state.data === data4}>
               Year
-            </Text>
+            </ValueTime>
           </ButtonPressAnimation>
         </View>
         <Animated.Code
@@ -373,7 +336,6 @@ export default class ValueChart extends PureComponent {
                 call([this.touchX], ([x]) => {
                   this._text.updateValue(this.state.data[Math.floor(x / (width / this.state.data.length))].value);
                   this._date.updateValue(String(new Date(this.state.data[Math.floor(x / (width / this.state.data.length))].timestamp).toLocaleTimeString()));
-                  
                 }),
               ),
               cond(

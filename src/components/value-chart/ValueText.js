@@ -3,7 +3,6 @@ import React from 'react';
 import { Text } from 'react-native';
 import { colors, fonts } from '../../styles';
 
-
 class ValueText extends React.Component {
 
   state = {
@@ -20,7 +19,7 @@ class ValueText extends React.Component {
         color: colors.white,
         fontFamily: fonts.family.SFMono,
       }}>
-        ${this.state.text}
+        ${Number(this.state.text).toFixed(2)}
       </Text>
     );
   }
