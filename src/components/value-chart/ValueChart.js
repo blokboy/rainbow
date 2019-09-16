@@ -8,14 +8,20 @@ import {
   contains,
   runTiming,
 } from 'react-native-redash';
-import { Text, View } from 'react-native';
-import { data1, data2, data3, data4 } from './data';
+import { View } from 'react-native';
+import {
+  data1,
+  data2,
+  data3,
+  data4,
+} from './data';
 import ValueText from './ValueText';
 import DateText from './DateText';
 import { deviceUtils } from '../../utils';
 import { fonts } from '../../styles';
 import { ButtonPressAnimation } from '../animations';
 import ValueTime from './ValueTime';
+import TimestampText from './TimestampText';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -140,6 +146,37 @@ export default class ValueChart extends PureComponent {
     this.reloadChart(data4);
   }
 
+  selectTimeTable = () => (
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginLeft: 15,
+      marginRight: 15,
+      top: 65,
+    }}>
+      <ButtonPressAnimation onPress={this.reloadChartToDay}>
+        <ValueTime selected={this.state.data === data1}>
+          Day
+        </ValueTime>
+      </ButtonPressAnimation>
+      <ButtonPressAnimation onPress={this.reloadChartToWeek}>
+        <ValueTime selected={this.state.data === data2}>
+          Week
+        </ValueTime>
+      </ButtonPressAnimation>
+      <ButtonPressAnimation onPress={this.reloadChartToMonth}>
+        <ValueTime selected={this.state.data === data3}>
+          Month
+        </ValueTime>
+      </ButtonPressAnimation>
+      <ButtonPressAnimation onPress={this.reloadChartToYear}>
+        <ValueTime selected={this.state.data === data4}>
+          Year
+        </ValueTime>
+      </ButtonPressAnimation>
+    </View>
+  );
+
   render() {
     const timestampLength = this.state.data[this.state.data.length - 1].timestamp - this.state.data[0].timestamp;
     const xMultiply = width / timestampLength;
@@ -177,7 +214,10 @@ export default class ValueChart extends PureComponent {
 
     const animatedPath = concat(
       'M 2 ',
-      add(multiply(add(splinePoints[0].y1, multiply(this.value, sub(splinePoints[0].y2, splinePoints[0].y1))), this.loadingValue), sub(100, multiply(100, this.loadingValue))),
+      add(
+        multiply(add(splinePoints[0].y1, multiply(this.value, sub(splinePoints[0].y2, splinePoints[0].y1))), this.loadingValue),
+        sub(100, multiply(100, this.loadingValue)),
+      ),
       ...splinePoints.flatMap(({ x, y1, y2 }) => [
         'L',
         x,
@@ -200,10 +240,10 @@ export default class ValueChart extends PureComponent {
           }}>
             <Animated.Text style={[{
               color: '#3c4252',
-              opacity: 0.5,
-              textAlign: 'center',
               fontFamily: fonts.family.SFProDisplay,
               marginBottom: 10,
+              opacity: 0.5,
+              textAlign: 'center',
             }, {
               opacity: this.loadingValue,
             }]}>
@@ -225,7 +265,7 @@ export default class ValueChart extends PureComponent {
               }]}
             >
               <ValueText
-                ref={component => this._text = component}
+                ref={component => { this._text = component; }}
               />
             </Animated.View>
             <Animated.View
@@ -264,24 +304,8 @@ export default class ValueChart extends PureComponent {
             }, {
               opacity: multiply(this.loadingValue, this.value),
             }]}>
-              <Text style={{
-                color: '#3c4252',
-                opacity: 0.5,
-                flex: 1,
-                textAlign: 'left',
-                fontFamily: fonts.family.SFProDisplay,
-              }}>
-                {startDate}
-              </Text>
-              <Text style={{
-                color: '#3c4252',
-                opacity: 0.5,
-                flex: 1,
-                textAlign: 'right',
-                fontFamily: fonts.family.SFProDisplay,
-              }}>
-                {endDate}
-              </Text>
+              <TimestampText>{startDate}</TimestampText>
+              <TimestampText>{endDate}</TimestampText>
             </Animated.View>
             <Animated.View
               style={[{
@@ -293,33 +317,12 @@ export default class ValueChart extends PureComponent {
               }]}
             >
               <DateText
-                ref={component => this._date = component}
+                ref={component => { this._date = component; }}
               />
             </Animated.View>
           </Animated.View>
         </PanGestureHandler>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginLeft: 15, marginRight: 15, top: 65 }}>
-          <ButtonPressAnimation onPress={this.reloadChartToDay}>
-            <ValueTime selected={this.state.data === data1}>
-              Day
-            </ValueTime>
-          </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToWeek}>
-            <ValueTime selected={this.state.data === data2}>
-              Week
-            </ValueTime>
-          </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToMonth}>
-            <ValueTime selected={this.state.data === data3}>
-              Month
-            </ValueTime>
-          </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToYear}>
-            <ValueTime selected={this.state.data === data4}>
-              Year
-            </ValueTime>
-          </ButtonPressAnimation>
-        </View>
+        {this.selectTimeTable()}
         <Animated.Code
           exec={
             block([
