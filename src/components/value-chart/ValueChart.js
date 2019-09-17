@@ -18,10 +18,11 @@ import {
 import ValueText from './ValueText';
 import DateText from './DateText';
 import { deviceUtils } from '../../utils';
-import { fonts } from '../../styles';
+import { fonts, colors } from '../../styles';
 import { ButtonPressAnimation } from '../animations';
 import ValueTime from './ValueTime';
 import TimestampText from './TimestampText';
+import TrendIndicatorText from './TrendIndicatorText';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -57,23 +58,27 @@ const {
 const FALSE = 1;
 const TRUE = 0;
 
-const width = deviceUtils.dimensions.width - 70;
+const width = deviceUtils.dimensions.width - 130;
 const height = 200;
 
 const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
 
-const indexInterval = 10;
-const heightInterval = 30;
+const indexInterval = 25;
+const heightInterval = 200;
 
 const pickImportantPoints = array => {
   const result = [];
   result.push(array[0]);
   let thresholdIndex = indexInterval;
   let thresholdHeight = array[0].y;
-  for (let i = 0; i < array.length; i++) {
+  for (let i = 1; i < array.length; i++) {
     if (i === array.length - 1) {
       result.push(array[i]);
     } else if (Math.abs(thresholdHeight - array[i].y) > heightInterval) {
+      result.push(array[i]);
+      thresholdIndex = i + indexInterval;
+      thresholdHeight = array[i].y;
+    } else if (array[i].y === 0 || array[i].y === 200) {
       result.push(array[i]);
       thresholdIndex = i + indexInterval;
       thresholdHeight = array[i].y;
@@ -148,28 +153,26 @@ export default class ValueChart extends PureComponent {
     <View style={{
       flexDirection: 'row',
       justifyContent: 'space-around',
-      marginLeft: 15,
-      marginRight: 15,
-      top: 65,
+      width: deviceUtils.dimensions.width - 130,
     }}>
       <ButtonPressAnimation onPress={this.reloadChartToDay}>
         <ValueTime selected={this.state.data === data1}>
-          Day
+          1D
         </ValueTime>
       </ButtonPressAnimation>
       <ButtonPressAnimation onPress={this.reloadChartToWeek}>
         <ValueTime selected={this.state.data === data2}>
-          Week
+          1W
         </ValueTime>
       </ButtonPressAnimation>
       <ButtonPressAnimation onPress={this.reloadChartToMonth}>
         <ValueTime selected={this.state.data === data3}>
-          Month
+          1M
         </ValueTime>
       </ButtonPressAnimation>
       <ButtonPressAnimation onPress={this.reloadChartToYear}>
         <ValueTime selected={this.state.data === data4}>
-          Year
+          1Y
         </ValueTime>
       </ButtonPressAnimation>
     </View>
@@ -233,10 +236,10 @@ export default class ValueChart extends PureComponent {
           onHandlerStateChange={this.onGestureEvent}
         >
           <Animated.View style={{
-            height: 150,
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
           }}>
-            <Animated.Text style={[{
+            
+            {/* <Animated.Text style={[{
               color: '#3c4252',
               fontFamily: fonts.family.SFProDisplay,
               marginBottom: 10,
@@ -246,66 +249,78 @@ export default class ValueChart extends PureComponent {
               opacity: this.loadingValue,
             }]}>
               {overallDate}
-            </Animated.Text>
-            <Animated.View
-              style={[{
-                alignItems: 'center',
-                backgroundColor: 'rgb(85, 195, 249)',
-                borderRadius: 12.5,
-                height: 25,
-                justifyContent: 'center',
-                marginBottom: 8,
-                top: 0,
-                width: 100,
-              }, {
-                opacity: this.opacity,
-                transform: [{ translateX: Animated.add((width / 2) - 50, multiply(sub(this.touchX, width / 2), 0.8)) }],
-              }]}
-            >
+            </Animated.Text> */}
+            <View style={{
+              height: 112,
+              justifyContent: 'space-between',
+              paddingLeft: 15,
+              paddingTop: 30,
+            }}>
               <ValueText
+                headerText="PRICE 🥳"
+                startValue={this.state.data[this.state.data.length - 1].value}
                 ref={component => { this._text = component; }}
               />
-            </Animated.View>
-            <Animated.View
-              style={[{
-                backgroundColor: 'rgb(85, 195, 249)',
-                height: 200,
-                position: 'absolute',
-                top: -11.5,
-                width: 3,
-                zIndex: 10,
-              }, {
-                opacity: this.opacity,
-                transform: [{ translateX: Animated.add(this.touchX, new Animated.Value(-1.5)) }],
-              }]}
-            />
-            <Svg
-              height={200}
-              width={width}
-              viewBox={`0 -30 ${width + 1} ${height + 40}`}
-              preserveAspectRatio="none"
-              style={flipY}
-            >
-              <AnimatedPath
-                id="main-path"
-                fill="none"
-                stroke="rgb(85, 195, 249)"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                d={animatedPath}
+              <TrendIndicatorText direction={'UP'}>
+                9.94%
+              </TrendIndicatorText>
+            </View>
+            <View style={{ flexDirection: 'row' }}>
+              <Svg
+                height={200}
+                width={width}
+                viewBox={`0 -50 ${width + 1} ${300}`}
+                preserveAspectRatio="none"
+                style={flipY}
+              >
+                <AnimatedPath
+                  id="main-path"
+                  fill="none"
+                  stroke={colors.chartGreen}
+                  strokeWidth={2.4}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  d={animatedPath}
+                />
+              </Svg>
+              <Animated.View
+                style={[{
+                  backgroundColor: colors.chartGreen,
+                  borderRadius: 2,
+                  height: 180,
+                  position: 'absolute',
+                  top: 10,
+                  width: 2,
+                  zIndex: 10,
+                }, {
+                  opacity: this.opacity,
+                  transform: [{ translateX: Animated.add(this.touchX, new Animated.Value(-1.5)) }],
+                }]}
               />
-            </Svg>
-            <Animated.View style={[{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }, {
-              opacity: multiply(this.loadingValue, this.value),
-            }]}>
-              <TimestampText>{startDate}</TimestampText>
-              <TimestampText>{endDate}</TimestampText>
-            </Animated.View>
-            <Animated.View
+              <Animated.View style={[{
+                height: 200,
+                justifyContent: 'space-between',
+                paddingBottom: 20,
+                paddingLeft: 20,
+                paddingTop: 20,
+                width: 100,
+              }, {
+                opacity: this.loadingValue,
+              }]}>
+                <TimestampText>
+                  ${Number(maxValue.value).toFixed(2)}
+                </TimestampText>
+                <TimestampText>
+                  ${Number((maxValue.value + minValue.value) / 2).toFixed(2)}
+                </TimestampText>
+                <TimestampText>
+                  ${Number(minValue.value).toFixed(2)}
+                </TimestampText>
+              </Animated.View>
+            </View>
+
+
+            {/* <Animated.View
               style={[{
                 flexDirection: 'row',
                 justifyContent: 'center',
@@ -317,10 +332,13 @@ export default class ValueChart extends PureComponent {
               <DateText
                 ref={component => { this._date = component; }}
               />
-            </Animated.View>
+            </Animated.View> */}
+            
+
+
+            {this.selectTimeTable()}
           </Animated.View>
         </PanGestureHandler>
-        {this.selectTimeTable()}
         <Animated.Code
           exec={
             block([
@@ -330,13 +348,18 @@ export default class ValueChart extends PureComponent {
               ),
               cond(
                 contains([FAILED, CANCELLED, END], this.gestureState),
-                set(this.shouldSpring, 0),
+                block([
+                  set(this.shouldSpring, 0),
+                  call([this.touchX], ([x]) => {
+                    this._text.updateValue(this.state.data[this.state.data.length - 1].value);
+                  }),
+                ]),
               ),
               onChange(
                 this.touchX,
                 call([this.touchX], ([x]) => {
                   this._text.updateValue(this.state.data[Math.floor(x / (width / this.state.data.length))].value);
-                  this._date.updateValue(String(new Date(this.state.data[Math.floor(x / (width / this.state.data.length))].timestamp).toLocaleTimeString()));
+                  // this._date.updateValue(String(new Date(this.state.data[Math.floor(x / (width / this.state.data.length))].timestamp).toLocaleTimeString()));
                 }),
               ),
               cond(

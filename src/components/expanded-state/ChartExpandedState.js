@@ -16,7 +16,7 @@ import FloatingPanels from './FloatingPanels';
 import ValueChart from '../value-chart/ValueChart';
 
 const ChartContainer = styled.View`
-  height: 330px;
+  height: 360px;
   border-radius: 20;
   justify-content: center;
   align-items: center;
@@ -31,14 +31,14 @@ const TokenExpandedState = ({
 }) => (
   <FloatingPanels>
     <AssetPanel>
+      <ChartContainer>
+        <ValueChart />
+      </ChartContainer>
       <AssetPanelHeader
         price={price}
         subtitle={subtitle}
         title={title}
       />
-      <ChartContainer>
-        <ValueChart />
-      </ChartContainer>
     </AssetPanel>
   </FloatingPanels>
 );
