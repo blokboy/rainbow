@@ -109,8 +109,6 @@ export default class ValueChart extends PureComponent {
     this.shouldSpring = new Value(0);
     this.isLoading = new Value(FALSE);
 
-    this.x0 = new Value(100);
-
     this.onGestureEvent = event([{
       nativeEvent: {
         state: this.gestureState,
@@ -354,20 +352,20 @@ export default class ValueChart extends PureComponent {
                   ),
                   stopClock(this.clockReversed),
                 ]),
-                cond(
-                  and(lessThan(this.value, 1), eq(this.shouldSpring, 0)),
-                  block([
-                    set(
-                      this.value,
-                      runTiming(this.clockReversed, this.value, {
-                        duration: 350,
-                        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-                        toValue: 1,
-                      }),
-                    ),
-                    stopClock(this.clock),
-                  ]),
-                ),
+              ),
+              cond(
+                and(lessThan(this.value, 1), eq(this.shouldSpring, 0)),
+                block([
+                  set(
+                    this.value,
+                    runTiming(this.clockReversed, this.value, {
+                      duration: 350,
+                      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                      toValue: 1,
+                    }),
+                  ),
+                  stopClock(this.clock),
+                ]),
               ),
               cond(
                 and(lessThan(this.opacity, 1), eq(this.shouldSpring, 1)),

@@ -17,9 +17,9 @@ class DateText extends React.Component {
   render() {
     return (
       <Text style={{
-        color: '#3c4252',
-        opacity: 0.5,
+        color: colors.blueGreyDark,
         fontFamily: fonts.family.SFProDisplay,
+        opacity: 0.5,
       }}>
         {this.state.text}
       </Text>
