@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { Fragment, PureComponent } from 'react';
 import { maxBy, minBy } from 'lodash';
 import Svg, { Path } from 'react-native-svg';
@@ -18,7 +19,7 @@ import {
 import ValueText from './ValueText';
 import DateText from './DateText';
 import { deviceUtils } from '../../utils';
-import { fonts, colors } from '../../styles';
+import { colors } from '../../styles';
 import { ButtonPressAnimation } from '../animations';
 import ValueTime from './ValueTime';
 import TimestampText from './TimestampText';
@@ -48,7 +49,7 @@ const {
 } = Animated;
 
 const {
-  BEGAN,
+  ACTIVE,
   CANCELLED,
   END,
   FAILED,
@@ -57,6 +58,13 @@ const {
 
 const FALSE = 1;
 const TRUE = 0;
+
+const interval = {
+  DAY: 1,
+  WEEK: 2,
+  MONTH: 3,
+  YEAR: 4,
+};
 
 const width = deviceUtils.dimensions.width - 130;
 const height = 200;
@@ -92,12 +100,18 @@ const pickImportantPoints = array => {
 };
 
 export default class ValueChart extends PureComponent {
+  static propTypes = {
+    change: PropTypes.string,
+    changeDirection: PropTypes.bool,
+  }
+
   touchX = new Value(150);
 
   constructor(props) {
     super(props);
 
     this.state = {
+      currentInterval: interval.DAY,
       data: data1,
     };
 
@@ -123,7 +137,8 @@ export default class ValueChart extends PureComponent {
 
   onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this.touchX, x)) } }], { useNativeDriver: true });
 
-  reloadChart = (data) => {
+  reloadChart = (data, currentInterval) => {
+    this.setState({ currentInterval });
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
       this.setState({ data });
@@ -134,51 +149,54 @@ export default class ValueChart extends PureComponent {
   }
 
   reloadChartToDay = () => {
-    this.reloadChart(data1);
+    this.reloadChart(data1, interval.DAY);
   }
 
   reloadChartToWeek = () => {
-    this.reloadChart(data2);
+    this.reloadChart(data2, interval.WEEK);
   }
 
   reloadChartToMonth = () => {
-    this.reloadChart(data3);
+    this.reloadChart(data3, interval.MONTH);
   }
 
   reloadChartToYear = () => {
-    this.reloadChart(data4);
+    this.reloadChart(data4, interval.YEAR);
   }
 
   selectTimeTable = () => (
-    <View style={{
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      width: deviceUtils.dimensions.width - 130,
-    }}>
-      <ButtonPressAnimation onPress={this.reloadChartToDay}>
-        <ValueTime selected={this.state.data === data1}>
-          1D
-        </ValueTime>
-      </ButtonPressAnimation>
-      <ButtonPressAnimation onPress={this.reloadChartToWeek}>
-        <ValueTime selected={this.state.data === data2}>
-          1W
-        </ValueTime>
-      </ButtonPressAnimation>
-      <ButtonPressAnimation onPress={this.reloadChartToMonth}>
-        <ValueTime selected={this.state.data === data3}>
-          1M
-        </ValueTime>
-      </ButtonPressAnimation>
-      <ButtonPressAnimation onPress={this.reloadChartToYear}>
-        <ValueTime selected={this.state.data === data4}>
-          1Y
-        </ValueTime>
-      </ButtonPressAnimation>
-    </View>
+    <Fragment>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: deviceUtils.dimensions.width - 130,
+      }}>
+        <ButtonPressAnimation onPress={this.reloadChartToDay}>
+          <ValueTime selected={this.state.currentInterval === interval.DAY}>
+            1D
+          </ValueTime>
+        </ButtonPressAnimation>
+        <ButtonPressAnimation onPress={this.reloadChartToWeek}>
+          <ValueTime selected={this.state.currentInterval === interval.WEEK}>
+            1W
+          </ValueTime>
+        </ButtonPressAnimation>
+        <ButtonPressAnimation onPress={this.reloadChartToMonth}>
+          <ValueTime selected={this.state.currentInterval === interval.MONTH}>
+            1M
+          </ValueTime>
+        </ButtonPressAnimation>
+        <ButtonPressAnimation onPress={this.reloadChartToYear}>
+          <ValueTime selected={this.state.currentInterval === interval.YEAR}>
+            1Y
+          </ValueTime>
+        </ButtonPressAnimation>
+      </View>
+    </Fragment>
   );
 
   render() {
+    const { change, changeDirection } = this.props;
     const timestampLength = this.state.data[this.state.data.length - 1].timestamp - this.state.data[0].timestamp;
     const xMultiply = width / timestampLength;
 
@@ -238,18 +256,6 @@ export default class ValueChart extends PureComponent {
           <Animated.View style={{
             justifyContent: 'flex-start',
           }}>
-            
-            {/* <Animated.Text style={[{
-              color: '#3c4252',
-              fontFamily: fonts.family.SFProDisplay,
-              marginBottom: 10,
-              opacity: 0.5,
-              textAlign: 'center',
-            }, {
-              opacity: this.loadingValue,
-            }]}>
-              {overallDate}
-            </Animated.Text> */}
             <View style={{
               height: 112,
               justifyContent: 'space-between',
@@ -261,8 +267,8 @@ export default class ValueChart extends PureComponent {
                 startValue={this.state.data[this.state.data.length - 1].value}
                 ref={component => { this._text = component; }}
               />
-              <TrendIndicatorText direction={'UP'}>
-                9.94%
+              <TrendIndicatorText direction={changeDirection}>
+                {change}
               </TrendIndicatorText>
             </View>
             <View style={{ flexDirection: 'row' }}>
@@ -333,17 +339,15 @@ export default class ValueChart extends PureComponent {
                 ref={component => { this._date = component; }}
               />
             </Animated.View> */}
-            
 
-
-            {this.selectTimeTable()}
           </Animated.View>
         </PanGestureHandler>
+        {this.selectTimeTable()}
         <Animated.Code
           exec={
             block([
               cond(
-                eq(this.gestureState, BEGAN),
+                eq(this.gestureState, ACTIVE),
                 set(this.shouldSpring, 1),
               ),
               cond(
@@ -365,6 +369,7 @@ export default class ValueChart extends PureComponent {
               cond(
                 and(greaterThan(this.value, 0), eq(this.shouldSpring, 1)),
                 block([
+                  stopClock(this.clockReversed),
                   set(
                     this.value,
                     runTiming(this.clock, this.value, {
@@ -373,12 +378,12 @@ export default class ValueChart extends PureComponent {
                       toValue: 0,
                     }),
                   ),
-                  stopClock(this.clockReversed),
                 ]),
               ),
               cond(
                 and(lessThan(this.value, 1), eq(this.shouldSpring, 0)),
                 block([
+                  stopClock(this.clock),
                   set(
                     this.value,
                     runTiming(this.clockReversed, this.value, {
@@ -387,7 +392,6 @@ export default class ValueChart extends PureComponent {
                       toValue: 1,
                     }),
                   ),
-                  stopClock(this.clock),
                 ]),
               ),
               cond(
@@ -403,20 +407,20 @@ export default class ValueChart extends PureComponent {
                   ),
                   stopClock(this.opacityClockReversed),
                 ]),
-                cond(
-                  and(greaterThan(this.opacity, 0), eq(this.shouldSpring, 0)),
-                  block([
-                    set(
-                      this.opacity,
-                      runTiming(this.opacityClockReversed, this.opacity, {
-                        duration: 500,
-                        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-                        toValue: 0,
-                      }),
-                    ),
-                    stopClock(this.opacityClock),
-                  ]),
-                ),
+              ),
+              cond(
+                and(greaterThan(this.opacity, 0), eq(this.shouldSpring, 0)),
+                block([
+                  set(
+                    this.opacity,
+                    runTiming(this.opacityClockReversed, this.opacity, {
+                      duration: 500,
+                      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+                      toValue: 0,
+                    }),
+                  ),
+                  stopClock(this.opacityClock),
+                ]),
               ),
               cond(
                 this.shouldSpring, 0,

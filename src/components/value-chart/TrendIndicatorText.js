@@ -10,28 +10,30 @@ const TrendIndicatorText = ({
   <View style={{
     flexDirection: 'row',
   }}>
-    <View style={{
-      backgroundColor: colors.chartGreen,
-      borderRadius: 5,
-      justifyContent: 'center',
-      marginRight: 8,
-    }}>
-      <Text style={{
-        fontFamily: fonts.family.SFProDisplay,
-        fontSize: 12,
-        paddingLeft: 5,
-        paddingRight: 5,
-        color: colors.white,
-        fontWeight: fonts.weight.semibold,
+    {direction
+      && <View style={{
+        backgroundColor: colors.chartGreen,
+        borderRadius: 5,
+        justifyContent: 'center',
+        marginRight: 8,
       }}>
-        {direction}
-      </Text>
-    </View>
+        <Text style={{
+          color: colors.white,
+          fontFamily: fonts.family.SFProDisplay,
+          fontSize: 12,
+          fontWeight: fonts.weight.semibold,
+          paddingLeft: 5,
+          paddingRight: 5,
+        }}>
+          UP
+        </Text>
+      </View>
+    }
     <Text style={{
+      color: direction ? colors.chartGreen : colors.blueGreyLight,
       fontFamily: fonts.family.SFProDisplay,
-      lineHeight: 17,
-      color: colors.chartGreen,
       fontWeight: fonts.weight.semibold,
+      lineHeight: 17,
     }}>
       {children}
     </Text>

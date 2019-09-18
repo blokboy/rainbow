@@ -11,12 +11,13 @@ import {
 import styled from 'styled-components/primitives';
 import { withAccountData, withAccountSettings } from '../../hoc';
 import { ethereumUtils } from '../../utils';
-import { AssetPanel, AssetPanelHeader } from './asset-panel';
+import { AssetPanel } from './asset-panel';
 import FloatingPanels from './FloatingPanels';
 import ValueChart from '../value-chart/ValueChart';
+import { BalanceCoinRow } from '../coin-row';
 
 const ChartContainer = styled.View`
-  height: 360px;
+  height: 380px;
   border-radius: 20;
   justify-content: center;
   align-items: center;
@@ -25,27 +26,32 @@ const ChartContainer = styled.View`
 
 const TokenExpandedState = ({
   onPressSend,
+  change,
+  changeDirection,
   price,
   subtitle,
+  selectedAsset,
   title,
 }) => (
   <FloatingPanels>
     <AssetPanel>
       <ChartContainer>
-        <ValueChart />
+        <ValueChart
+          change={change}
+          changeDirection={changeDirection}
+        />
       </ChartContainer>
-      <AssetPanelHeader
-        price={price}
-        subtitle={subtitle}
-        title={title}
-      />
+      <BalanceCoinRow {...selectedAsset}></BalanceCoinRow>
     </AssetPanel>
   </FloatingPanels>
 );
 
 TokenExpandedState.propTypes = {
+  change: PropTypes.string,
+  changeDirection: PropTypes.bool,
   onPressSend: PropTypes.func,
   price: PropTypes.string,
+  selectedAsset: PropTypes.object,
   subtitle: PropTypes.string,
   title: PropTypes.string,
 };
@@ -65,7 +71,10 @@ export default compose(
   }) => {
     const selectedAsset = ethereumUtils.getAsset(assets, address);
     return {
+      change: get(selectedAsset, 'native.change', '-'),
+      changeDirection: get(selectedAsset, 'price.relative_change_24h', 0) > 0,
       price: get(selectedAsset, 'native.price.display', null),
+      selectedAsset,
       subtitle: get(selectedAsset, 'balance.display', symbol),
       title: name,
     };
