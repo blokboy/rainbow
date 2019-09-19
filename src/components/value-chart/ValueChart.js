@@ -113,6 +113,8 @@ export default class ValueChart extends PureComponent {
     this.state = {
       currentInterval: interval.DAY,
       data: data1,
+      hideLoadingBar: false,
+      shouldRenderChart: false,
     };
 
     this.clock = new Clock();
@@ -138,10 +140,9 @@ export default class ValueChart extends PureComponent {
   onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this.touchX, x)) } }], { useNativeDriver: true });
 
   reloadChart = (data, currentInterval) => {
-    this.setState({ currentInterval });
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
-      this.setState({ data });
+      this.setState({ currentInterval, data });
     }, 600);
     setTimeout(() => {
       this.isLoading.setValue(FALSE);
@@ -164,44 +165,13 @@ export default class ValueChart extends PureComponent {
     this.reloadChart(data4, interval.YEAR);
   }
 
-  selectTimeTable = () => (
-    <Fragment>
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        width: deviceUtils.dimensions.width - 130,
-      }}>
-        <ButtonPressAnimation onPress={this.reloadChartToDay}>
-          <ValueTime selected={this.state.currentInterval === interval.DAY}>
-            1D
-          </ValueTime>
-        </ButtonPressAnimation>
-        <ButtonPressAnimation onPress={this.reloadChartToWeek}>
-          <ValueTime selected={this.state.currentInterval === interval.WEEK}>
-            1W
-          </ValueTime>
-        </ButtonPressAnimation>
-        <ButtonPressAnimation onPress={this.reloadChartToMonth}>
-          <ValueTime selected={this.state.currentInterval === interval.MONTH}>
-            1M
-          </ValueTime>
-        </ButtonPressAnimation>
-        <ButtonPressAnimation onPress={this.reloadChartToYear}>
-          <ValueTime selected={this.state.currentInterval === interval.YEAR}>
-            1Y
-          </ValueTime>
-        </ButtonPressAnimation>
-      </View>
-    </Fragment>
-  );
+  createAnimatedPath = () => {
+    const maxValue = maxBy(this.state.data, 'value');
+    const minValue = minBy(this.state.data, 'value');
 
-  render() {
-    const { change, changeDirection } = this.props;
     const timestampLength = this.state.data[this.state.data.length - 1].timestamp - this.state.data[0].timestamp;
     const xMultiply = width / timestampLength;
 
-    const maxValue = maxBy(this.state.data, 'value');
-    const minValue = minBy(this.state.data, 'value');
     const yMultiply = height / (maxValue.value - minValue.value);
 
     const points = this.state.data.map(({ timestamp, value }) => ({
@@ -209,15 +179,15 @@ export default class ValueChart extends PureComponent {
       y: (value - minValue.value) * yMultiply,
     }));
 
-    const startDate = String(new Date(this.state.data[0].timestamp).toLocaleTimeString());
-    const endDate = String(new Date(this.state.data[this.state.data.length - 1].timestamp).toLocaleTimeString());
+    // const startDate = String(new Date(this.state.data[0].timestamp).toLocaleTimeString());
+    // const endDate = String(new Date(this.state.data[this.state.data.length - 1].timestamp).toLocaleTimeString());
 
-    const overallDate = String(new Date(this.state.data[0].timestamp).toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      weekday: 'long',
-      year: 'numeric',
-    }));
+    // const overallDate = String(new Date(this.state.data[0].timestamp).toLocaleDateString('en-US', {
+    //   day: 'numeric',
+    //   month: 'short',
+    //   weekday: 'long',
+    //   year: 'numeric',
+    // }));
 
     const importantPoints = pickImportantPoints(points);
     const spline = new Bezier(importantPoints.map(({ x, y }) => [x, y]));
@@ -245,6 +215,22 @@ export default class ValueChart extends PureComponent {
       ]),
     );
 
+    return animatedPath;
+  }
+
+  componentDidMount = () => {
+    setTimeout(() => {
+      this.setState({ shouldRenderChart: true });
+    }, 500);
+  }
+
+  render() {
+    const { change, changeDirection } = this.props;
+    const maxValue = maxBy(this.state.data, 'value');
+    const minValue = minBy(this.state.data, 'value');
+
+    const animatedPath = this.state.shouldRenderChart ? this.createAnimatedPath() : null;
+    console.log('rerender');
     return (
       <Fragment>
         <PanGestureHandler
@@ -272,23 +258,28 @@ export default class ValueChart extends PureComponent {
               </TrendIndicatorText>
             </View>
             <View style={{ flexDirection: 'row' }}>
-              <Svg
-                height={200}
-                width={width}
-                viewBox={`0 -50 ${width + 1} ${300}`}
-                preserveAspectRatio="none"
-                style={flipY}
-              >
-                <AnimatedPath
-                  id="main-path"
-                  fill="none"
-                  stroke={colors.chartGreen}
-                  strokeWidth={2.4}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  d={animatedPath}
-                />
-              </Svg>
+              <View style={{
+                height: 200,
+                width,
+              }}>
+                <Svg
+                  height={200}
+                  width={width}
+                  viewBox={`0 -50 ${width + 1} ${300}`}
+                  preserveAspectRatio="none"
+                  style={flipY}
+                >
+                  <AnimatedPath
+                    id="main-path"
+                    fill="none"
+                    stroke={colors.chartGreen}
+                    strokeWidth={2.4}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    d={animatedPath}
+                  />
+                </Svg>
+              </View>
               <Animated.View
                 style={[{
                   backgroundColor: colors.chartGreen,
@@ -324,25 +315,34 @@ export default class ValueChart extends PureComponent {
                 </TimestampText>
               </Animated.View>
             </View>
-
-
-            {/* <Animated.View
-              style={[{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                marginTop: -17,
-              }, {
-                opacity: this.opacity,
-              }]}
-            >
-              <DateText
-                ref={component => { this._date = component; }}
-              />
-            </Animated.View> */}
-
           </Animated.View>
         </PanGestureHandler>
-        {this.selectTimeTable()}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          width: deviceUtils.dimensions.width - 130,
+        }}>
+          <ButtonPressAnimation onPress={this.reloadChartToDay}>
+            <ValueTime selected={this.state.currentInterval === interval.DAY}>
+              1D
+            </ValueTime>
+          </ButtonPressAnimation>
+          <ButtonPressAnimation onPress={this.reloadChartToWeek}>
+            <ValueTime selected={this.state.currentInterval === interval.WEEK}>
+              1W
+            </ValueTime>
+          </ButtonPressAnimation>
+          <ButtonPressAnimation onPress={this.reloadChartToMonth}>
+            <ValueTime selected={this.state.currentInterval === interval.MONTH}>
+              1M
+            </ValueTime>
+          </ButtonPressAnimation>
+          <ButtonPressAnimation onPress={this.reloadChartToYear}>
+            <ValueTime selected={this.state.currentInterval === interval.YEAR}>
+              1Y
+            </ValueTime>
+          </ButtonPressAnimation>
+        </View>
         <Animated.Code
           exec={
             block([
@@ -363,7 +363,6 @@ export default class ValueChart extends PureComponent {
                 this.touchX,
                 call([this.touchX], ([x]) => {
                   this._text.updateValue(this.state.data[Math.floor(x / (width / this.state.data.length))].value);
-                  // this._date.updateValue(String(new Date(this.state.data[Math.floor(x / (width / this.state.data.length))].timestamp).toLocaleTimeString()));
                 }),
               ),
               cond(
