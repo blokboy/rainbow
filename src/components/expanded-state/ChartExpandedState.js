@@ -98,7 +98,10 @@ export default compose(
     assets,
     nativeCurrencySymbol,
   }) => {
-    const selectedAsset = ethereumUtils.getAsset(assets, address);
+    let selectedAsset = ethereumUtils.getAsset(assets, address);
+    if (!selectedAsset) {
+      selectedAsset = asset;
+    }
     return {
       change: get(selectedAsset, 'native.change', '-'),
       changeDirection: get(selectedAsset, 'price.relative_change_24h', 0) > 0,

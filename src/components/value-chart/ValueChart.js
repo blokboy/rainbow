@@ -230,7 +230,6 @@ export default class ValueChart extends PureComponent {
     const minValue = minBy(this.state.data, 'value');
 
     const animatedPath = this.state.shouldRenderChart ? this.createAnimatedPath() : null;
-    console.log('rerender');
     return (
       <Fragment>
         <ValueText
