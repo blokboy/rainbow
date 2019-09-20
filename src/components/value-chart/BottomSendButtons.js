@@ -7,12 +7,12 @@ import { ShadowStack } from '../shadow-stack';
 import { ButtonPressAnimation } from '../animations';
 import { deviceUtils } from '../../utils';
 
-const buttonWidth = (deviceUtils.dimensions.width - 75) / 2;
+const buttonWidth = (deviceUtils.dimensions.width - 45) / 2;
 
 const Container = styled.View`
   flex-direction: row;
   justify-content: space-between;
-  padding: 7px 15px;
+  padding: 15px 15px 0px;
 `;
 
 const Button = styled.View`

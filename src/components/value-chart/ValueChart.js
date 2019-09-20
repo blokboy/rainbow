@@ -66,7 +66,7 @@ const interval = {
   YEAR: 4,
 };
 
-const width = deviceUtils.dimensions.width - 130;
+const width = deviceUtils.dimensions.width - 100;
 const height = 200;
 
 const flipY = { transform: [{ scaleX: 1 }, { scaleY: -1 }] };
@@ -242,21 +242,13 @@ export default class ValueChart extends PureComponent {
           <Animated.View style={{
             justifyContent: 'flex-start',
           }}>
-            <View style={{
-              height: 112,
-              justifyContent: 'space-between',
-              paddingLeft: 15,
-              paddingTop: 30,
-            }}>
-              <ValueText
-                headerText="PRICE 🥳"
-                startValue={this.state.data[this.state.data.length - 1].value}
-                ref={component => { this._text = component; }}
-              />
-              <TrendIndicatorText direction={changeDirection}>
-                {change}
-              </TrendIndicatorText>
-            </View>
+            <ValueText
+              headerText="PRICE 🥳"
+              startValue={this.state.data[this.state.data.length - 1].value}
+              direction={changeDirection}
+              change={change}
+              ref={component => { this._text = component; }}
+            />
             <View style={{ flexDirection: 'row' }}>
               <View style={{
                 height: 200,

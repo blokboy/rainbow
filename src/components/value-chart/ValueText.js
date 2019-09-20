@@ -4,6 +4,7 @@ import styled from 'styled-components/primitives';
 import { View } from 'react-native';
 import { colors, fonts } from '../../styles';
 import { TruncatedText, Monospace } from '../text';
+import TrendIndicatorText from './TrendIndicatorText';
 
 const HeadingTextStyles = {
   color: colors.dark,
@@ -12,13 +13,11 @@ const HeadingTextStyles = {
 };
 
 const Title = styled(TruncatedText).attrs(HeadingTextStyles)`
-  margin-top: -12px;
-  flex: 1;
   font-size: 30px;
+  margin-bottom: 6.5px;
 `;
 
 const Header = styled(TruncatedText)`
-  flex: 1;
   font-size: ${fonts.size.smedium};
   color: ${colors.blueGreyLight};
   font-weight: ${fonts.weight.semibold};
@@ -27,6 +26,8 @@ const Header = styled(TruncatedText)`
 
 class ValueText extends React.Component {
   static propTypes = {
+    change: PropTypes.string,
+    direction: PropTypes.bool,
     headerText: PropTypes.string,
     startValue: PropTypes.string,
     text: PropTypes.string,
@@ -42,13 +43,19 @@ class ValueText extends React.Component {
 
   render() {
     return (
-      <View style={{ height: 60 }}>
+      <View style={{
+        height: 85,
+        paddingLeft: 15,
+      }}>
         <Header>
           {this.props.headerText}
         </Header>
         <Title>
           ${Number(this.state.text).toFixed(2)}
         </Title>
+        <TrendIndicatorText direction={this.props.direction}>
+          {this.props.change}
+        </TrendIndicatorText>
       </View>
     );
   }

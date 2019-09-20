@@ -10,22 +10,42 @@ import {
 } from 'recompact';
 import styled from 'styled-components/primitives';
 import { withAccountData, withAccountSettings } from '../../hoc';
-import { ethereumUtils } from '../../utils';
-import { AssetPanel } from './asset-panel';
-import FloatingPanels from './FloatingPanels';
+import { ethereumUtils, deviceUtils } from '../../utils';
 import ValueChart from '../value-chart/ValueChart';
 import { BalanceCoinRow } from '../coin-row';
 import BottomSendButtons from '../value-chart/BottomSendButtons';
+import { colors } from '../../styles';
+import Divider from '../Divider';
+import { Icon } from '../icons';
+
+const HandleIcon = styled(Icon).attrs({
+  color: '#C4C6CB',
+  name: 'handle',
+})`
+  margin-top: 12px;
+  margin-bottom: 8px;
+`;
 
 const ChartContainer = styled.View`
-  height: 380px;
+  height: 335px;
   border-radius: 20;
-  justify-content: center;
   align-items: center;
 `;
 
 const BottomContainer = styled.View`
-  padding-bottom: 20px;
+  width: ${deviceUtils.dimensions.width};
+  padding-top: 8px;
+`;
+
+const Container = styled.View`
+  background-color: ${colors.white};
+  width: ${deviceUtils.dimensions.width};
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  bottom: 0;
+  position: absolute;
+  padding-bottom: ${deviceUtils.isTallPhone ? '50px' : '20px'};
+  align-items: center;
 `;
 
 const TokenExpandedState = ({
@@ -33,28 +53,25 @@ const TokenExpandedState = ({
   onPressSwap,
   change,
   changeDirection,
-  price,
-  subtitle,
   selectedAsset,
-  title,
 }) => (
-  <FloatingPanels>
-    <AssetPanel>
-      <ChartContainer>
-        <ValueChart
-          change={change}
-          changeDirection={changeDirection}
-        />
-      </ChartContainer>
-      <BottomContainer>
-        <BalanceCoinRow {...selectedAsset}></BalanceCoinRow>
-        <BottomSendButtons
-          onPressSend={onPressSend}
-          onPressSwap={onPressSwap}
-        />
-      </BottomContainer>
-    </AssetPanel>
-  </FloatingPanels>
+  <Container>
+    <HandleIcon />
+    <ChartContainer>
+      <ValueChart
+        change={change}
+        changeDirection={changeDirection}
+      />
+    </ChartContainer>
+    <Divider/>
+    <BottomContainer>
+      <BalanceCoinRow {...selectedAsset}></BalanceCoinRow>
+      <BottomSendButtons
+        onPressSend={onPressSend}
+        onPressSwap={onPressSwap}
+      />
+    </BottomContainer>
+  </Container>
 );
 
 TokenExpandedState.propTypes = {
@@ -85,10 +102,7 @@ export default compose(
     return {
       change: get(selectedAsset, 'native.change', '-'),
       changeDirection: get(selectedAsset, 'price.relative_change_24h', 0) > 0,
-      price: get(selectedAsset, 'native.price.display', null),
       selectedAsset,
-      subtitle: get(selectedAsset, 'balance.display', symbol),
-      title: name,
     };
   }),
   withHandlers({
