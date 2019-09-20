@@ -233,6 +233,13 @@ export default class ValueChart extends PureComponent {
     console.log('rerender');
     return (
       <Fragment>
+        <ValueText
+          headerText="PRICE 🥳"
+          startValue={this.state.data[this.state.data.length - 1].value}
+          direction={changeDirection}
+          change={change}
+          ref={component => { this._text = component; }}
+        />
         <PanGestureHandler
           minDist={0}
           shouldActivateOnStart={true}
@@ -242,13 +249,6 @@ export default class ValueChart extends PureComponent {
           <Animated.View style={{
             justifyContent: 'flex-start',
           }}>
-            <ValueText
-              headerText="PRICE 🥳"
-              startValue={this.state.data[this.state.data.length - 1].value}
-              direction={changeDirection}
-              change={change}
-              ref={component => { this._text = component; }}
-            />
             <View style={{ flexDirection: 'row' }}>
               <View style={{
                 height: 200,

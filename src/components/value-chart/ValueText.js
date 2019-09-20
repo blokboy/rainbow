@@ -3,8 +3,9 @@ import React from 'react';
 import styled from 'styled-components/primitives';
 import { View } from 'react-native';
 import { colors, fonts } from '../../styles';
-import { TruncatedText, Monospace } from '../text';
+import { TruncatedText } from '../text';
 import TrendIndicatorText from './TrendIndicatorText';
+import { deviceUtils } from '../../utils';
 
 const HeadingTextStyles = {
   color: colors.dark,
@@ -46,6 +47,7 @@ class ValueText extends React.Component {
       <View style={{
         height: 85,
         paddingLeft: 15,
+        width: deviceUtils.dimensions.width,
       }}>
         <Header>
           {this.props.headerText}
