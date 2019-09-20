@@ -15,6 +15,7 @@ import { AssetPanel } from './asset-panel';
 import FloatingPanels from './FloatingPanels';
 import ValueChart from '../value-chart/ValueChart';
 import { BalanceCoinRow } from '../coin-row';
+import BottomSendButtons from '../value-chart/BottomSendButtons';
 
 const ChartContainer = styled.View`
   height: 380px;
@@ -23,9 +24,13 @@ const ChartContainer = styled.View`
   align-items: center;
 `;
 
+const BottomContainer = styled.View`
+  padding-bottom: 20px;
+`;
 
 const TokenExpandedState = ({
   onPressSend,
+  onPressSwap,
   change,
   changeDirection,
   price,
@@ -41,7 +46,13 @@ const TokenExpandedState = ({
           changeDirection={changeDirection}
         />
       </ChartContainer>
-      <BalanceCoinRow {...selectedAsset}></BalanceCoinRow>
+      <BottomContainer>
+        <BalanceCoinRow {...selectedAsset}></BalanceCoinRow>
+        <BottomSendButtons
+          onPressSend={onPressSend}
+          onPressSwap={onPressSwap}
+        />
+      </BottomContainer>
     </AssetPanel>
   </FloatingPanels>
 );
@@ -50,6 +61,7 @@ TokenExpandedState.propTypes = {
   change: PropTypes.string,
   changeDirection: PropTypes.bool,
   onPressSend: PropTypes.func,
+  onPressSwap: PropTypes.func,
   price: PropTypes.string,
   selectedAsset: PropTypes.object,
   subtitle: PropTypes.string,
@@ -59,7 +71,7 @@ TokenExpandedState.propTypes = {
 export default compose(
   withAccountData,
   withAccountSettings,
-  withProps(({
+  withProps (({
     asset: {
       address,
       name,
@@ -85,6 +97,13 @@ export default compose(
 
       InteractionManager.runAfterInteractions(() => {
         navigation.navigate('SendSheet', { asset });
+      });
+    },
+    onPressSwap: ({ navigation, asset }) => () => {
+      navigation.goBack();
+
+      InteractionManager.runAfterInteractions(() => {
+        navigation.navigate('ExchangeModal', { asset });
       });
     },
   }),
