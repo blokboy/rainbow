@@ -17,13 +17,10 @@ import {
   data4,
 } from './data';
 import ValueText from './ValueText';
-import DateText from './DateText';
 import { deviceUtils } from '../../utils';
 import { colors } from '../../styles';
-import { ButtonPressAnimation } from '../animations';
-import ValueTime from './ValueTime';
 import TimestampText from './TimestampText';
-import TrendIndicatorText from './TrendIndicatorText';
+import TimespanSelector from './TimespanSelector';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -58,13 +55,6 @@ const {
 
 const FALSE = 1;
 const TRUE = 0;
-
-const interval = {
-  DAY: 1,
-  WEEK: 2,
-  MONTH: 3,
-  YEAR: 4,
-};
 
 const width = deviceUtils.dimensions.width - 100;
 const height = 200;
@@ -111,7 +101,6 @@ export default class ValueChart extends PureComponent {
     super(props);
 
     this.state = {
-      currentInterval: interval.DAY,
       data: data1,
       hideLoadingBar: false,
       shouldRenderChart: false,
@@ -139,30 +128,16 @@ export default class ValueChart extends PureComponent {
 
   onPanGestureEvent = event([{ nativeEvent: { x: x => cond(and(greaterOrEq(x, 0), lessThan(x, width)), set(this.touchX, x)) } }], { useNativeDriver: true });
 
-  reloadChart = (data, currentInterval) => {
+  reloadChart = (currentInterval) => {
+    const dataset = [data1, data2, data3, data4];
+
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
-      this.setState({ currentInterval, data });
+      this.setState({ data: dataset[currentInterval] });
     }, 600);
     setTimeout(() => {
       this.isLoading.setValue(FALSE);
     }, 1600);
-  }
-
-  reloadChartToDay = () => {
-    this.reloadChart(data1, interval.DAY);
-  }
-
-  reloadChartToWeek = () => {
-    this.reloadChart(data2, interval.WEEK);
-  }
-
-  reloadChartToMonth = () => {
-    this.reloadChart(data3, interval.MONTH);
-  }
-
-  reloadChartToYear = () => {
-    this.reloadChart(data4, interval.YEAR);
   }
 
   createAnimatedPath = () => {
@@ -308,32 +283,9 @@ export default class ValueChart extends PureComponent {
             </View>
           </Animated.View>
         </PanGestureHandler>
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          width: deviceUtils.dimensions.width - 130,
-        }}>
-          <ButtonPressAnimation onPress={this.reloadChartToDay}>
-            <ValueTime selected={this.state.currentInterval === interval.DAY}>
-              1D
-            </ValueTime>
-          </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToWeek}>
-            <ValueTime selected={this.state.currentInterval === interval.WEEK}>
-              1W
-            </ValueTime>
-          </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToMonth}>
-            <ValueTime selected={this.state.currentInterval === interval.MONTH}>
-              1M
-            </ValueTime>
-          </ButtonPressAnimation>
-          <ButtonPressAnimation onPress={this.reloadChartToYear}>
-            <ValueTime selected={this.state.currentInterval === interval.YEAR}>
-              1Y
-            </ValueTime>
-          </ButtonPressAnimation>
-        </View>
+        <TimespanSelector
+          reloadChart={this.reloadChart}
+        />
         <Animated.Code
           exec={
             block([
