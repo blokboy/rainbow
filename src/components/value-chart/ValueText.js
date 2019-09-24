@@ -25,21 +25,11 @@ const Header = styled(TruncatedText)`
   letter-spacing: 1.3;
 `;
 
-const LoadingText = styled(TruncatedText)`
-  font-size: ${fonts.size.smedium};
-  color: ${colors.blueGreyLight};
-  font-weight: ${fonts.weight.semibold};
-  letter-spacing: 1.3;
-  text-align: center;
-  padding: 10px;
-`;
-
 class ValueText extends React.Component {
   static propTypes = {
     change: PropTypes.string,
     direction: PropTypes.bool,
     headerText: PropTypes.string,
-    isOpen: PropTypes.bool,
     startValue: PropTypes.string,
     text: PropTypes.string,
   };
@@ -55,7 +45,7 @@ class ValueText extends React.Component {
   render() {
     return (
       <View style={{
-        height: this.props.isOpen ? 85 : 110,
+        height: 85,
         paddingLeft: 15,
         width: deviceUtils.dimensions.width,
       }}>
@@ -68,12 +58,6 @@ class ValueText extends React.Component {
         <TrendIndicatorText direction={this.props.direction}>
           {this.props.change}
         </TrendIndicatorText>
-        {
-          !this.props.isOpen
-          && <LoadingText>
-            Loading chart...
-          </LoadingText>
-        }
       </View>
     );
   }

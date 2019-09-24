@@ -93,7 +93,6 @@ export default class ValueChart extends PureComponent {
   static propTypes = {
     change: PropTypes.string,
     changeDirection: PropTypes.bool,
-    isOpen: PropTypes.bool,
   }
 
   touchX = new Value(150);
@@ -213,7 +212,6 @@ export default class ValueChart extends PureComponent {
           startValue={this.state.data[this.state.data.length - 1].value}
           direction={changeDirection}
           change={change}
-          isOpen={this.props.isOpen}
           ref={component => { this._text = component; }}
         />
         <PanGestureHandler
