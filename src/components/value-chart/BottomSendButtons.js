@@ -13,6 +13,7 @@ const Container = styled.View`
   flex-direction: row;
   justify-content: space-between;
   padding: 15px 15px 0px;
+  background-color: #fff;
 `;
 
 const Button = styled.View`

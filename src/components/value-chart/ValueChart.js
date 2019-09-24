@@ -93,6 +93,7 @@ export default class ValueChart extends PureComponent {
   static propTypes = {
     change: PropTypes.string,
     changeDirection: PropTypes.bool,
+    isOpen: PropTypes.bool,
   }
 
   touchX = new Value(150);
@@ -134,10 +135,10 @@ export default class ValueChart extends PureComponent {
     this.isLoading.setValue(TRUE);
     setTimeout(() => {
       this.setState({ data: dataset[currentInterval] });
-    }, 600);
+    }, 400);
     setTimeout(() => {
       this.isLoading.setValue(FALSE);
-    }, 1600);
+    }, 1200);
   }
 
   createAnimatedPath = () => {
@@ -212,6 +213,7 @@ export default class ValueChart extends PureComponent {
           startValue={this.state.data[this.state.data.length - 1].value}
           direction={changeDirection}
           change={change}
+          isOpen={this.props.isOpen}
           ref={component => { this._text = component; }}
         />
         <PanGestureHandler
@@ -369,7 +371,7 @@ export default class ValueChart extends PureComponent {
                 set(
                   this.loadingValue,
                   runTiming(this.loadingClock, this.loadingValue, {
-                    duration: 500,
+                    duration: 300,
                     easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
                     toValue: cond(eq(this.isLoading, 1), 1, 0),
                   }),

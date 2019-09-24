@@ -23,6 +23,8 @@ const {
   Value,
 } = Animated;
 
+const bottomSpaceWidth = (deviceUtils.dimensions.width / (4 * 2));
+
 class TimespanSelector extends React.Component {
   propTypes = {
     reloadChart: PropTypes.func,
@@ -32,8 +34,8 @@ class TimespanSelector extends React.Component {
     super(props);
 
     this.clock = new Clock();
-    this.positionX = new Value(-(deviceUtils.dimensions.width / 8) * 3);
-    this.translateX = new Value(-(deviceUtils.dimensions.width / 8) * 3);
+    this.positionX = new Value(-bottomSpaceWidth * 3);
+    this.translateX = new Value(-bottomSpaceWidth * 3);
 
     this.state = {
       currentInterval: 0,
@@ -41,25 +43,25 @@ class TimespanSelector extends React.Component {
   }
 
   reloadChartToDay = () => {
-    this.positionX.setValue(-(deviceUtils.dimensions.width / 8) * 3);
+    this.positionX.setValue(-bottomSpaceWidth * 3);
     this.setState({ currentInterval: interval.DAY });
     this.props.reloadChart(interval.DAY);
   }
 
   reloadChartToWeek = () => {
-    this.positionX.setValue(-(deviceUtils.dimensions.width / 8));
+    this.positionX.setValue(-bottomSpaceWidth);
     this.setState({ currentInterval: interval.WEEK });
     this.props.reloadChart(interval.WEEK);
   }
 
   reloadChartToMonth = () => {
-    this.positionX.setValue((deviceUtils.dimensions.width / 8));
+    this.positionX.setValue(bottomSpaceWidth);
     this.setState({ currentInterval: interval.MONTH });
     this.props.reloadChart(interval.MONTH);
   }
 
   reloadChartToYear = () => {
-    this.positionX.setValue((deviceUtils.dimensions.width / 8) * 3);
+    this.positionX.setValue(bottomSpaceWidth * 3);
     this.setState({ currentInterval: interval.YEAR });
     this.props.reloadChart(interval.YEAR);
   }

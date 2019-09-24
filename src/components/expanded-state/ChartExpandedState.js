@@ -7,6 +7,8 @@ import {
   onlyUpdateForKeys,
   withHandlers,
   withProps,
+  withState,
+  lifecycle,
 } from 'recompact';
 import styled from 'styled-components/primitives';
 import { withAccountData, withAccountSettings } from '../../hoc';
@@ -17,6 +19,7 @@ import BottomSendButtons from '../value-chart/BottomSendButtons';
 import { colors } from '../../styles';
 import Divider from '../Divider';
 import { Icon } from '../icons';
+import SizeToggler from '../animations/SizeToggler';
 
 const HandleIcon = styled(Icon).attrs({
   color: '#C4C6CB',
@@ -27,14 +30,16 @@ const HandleIcon = styled(Icon).attrs({
 `;
 
 const ChartContainer = styled.View`
-  height: 335px;
   border-radius: 20;
   align-items: center;
+  overflow: hidden;
 `;
 
 const BottomContainer = styled.View`
+  background-color: #fff;
   width: ${deviceUtils.dimensions.width};
   padding-top: 8px;
+  padding-bottom: ${deviceUtils.isTallPhone ? '50px' : '20px'};
 `;
 
 const Container = styled.View`
@@ -44,11 +49,12 @@ const Container = styled.View`
   border-top-right-radius: 20px;
   bottom: 0;
   position: absolute;
-  padding-bottom: ${deviceUtils.isTallPhone ? '50px' : '20px'};
   align-items: center;
+  background-color: #fff;
 `;
 
 const TokenExpandedState = ({
+  isOpen,
   onPressSend,
   onPressSwap,
   change,
@@ -57,12 +63,19 @@ const TokenExpandedState = ({
 }) => (
   <Container>
     <HandleIcon />
-    <ChartContainer>
-      <ValueChart
-        change={change}
-        changeDirection={changeDirection}
-      />
-    </ChartContainer>
+    <SizeToggler
+      startingWidth={120}
+      endingWidth={335}
+      toggle={isOpen}
+    >
+      <ChartContainer>
+        <ValueChart
+          change={change}
+          changeDirection={changeDirection}
+          isOpen={isOpen}
+        />
+      </ChartContainer>
+    </SizeToggler>
     <Divider/>
     <BottomContainer>
       <BalanceCoinRow {...selectedAsset}></BalanceCoinRow>
@@ -77,6 +90,7 @@ const TokenExpandedState = ({
 TokenExpandedState.propTypes = {
   change: PropTypes.string,
   changeDirection: PropTypes.bool,
+  isOpen: PropTypes.bool,
   onPressSend: PropTypes.func,
   onPressSwap: PropTypes.func,
   price: PropTypes.string,
@@ -88,7 +102,8 @@ TokenExpandedState.propTypes = {
 export default compose(
   withAccountData,
   withAccountSettings,
-  withProps (({
+  withState('isOpen', 'setIsOpen', false),
+  withProps(({
     asset: {
       address,
       name,
@@ -123,6 +138,16 @@ export default compose(
         navigation.navigate('ExchangeModal', { asset });
       });
     },
+    onOpen: ({ setIsOpen }) => () => {
+      setIsOpen(true);
+    },
   }),
-  onlyUpdateForKeys(['price', 'subtitle']),
+  onlyUpdateForKeys(['price', 'subtitle', 'isOpen']),
+  lifecycle({
+    componentDidMount() {
+      setTimeout(() => {
+        this.props.onOpen();
+      }, 600);
+    },
+  }),
 )(TokenExpandedState);
