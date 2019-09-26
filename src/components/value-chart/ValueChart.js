@@ -90,11 +90,6 @@ const pickImportantPoints = array => {
 };
 
 export default class ValueChart extends PureComponent {
-  static propTypes = {
-    change: PropTypes.string,
-    changeDirection: PropTypes.bool,
-  }
-
   touchX = new Value(150);
 
   constructor(props) {
@@ -200,9 +195,9 @@ export default class ValueChart extends PureComponent {
   }
 
   render() {
-    const { change, changeDirection } = this.props;
     const maxValue = maxBy(this.state.data, 'value');
     const minValue = minBy(this.state.data, 'value');
+    const change = ((this.state.data[this.state.data.length - 1].value - this.state.data[0].value) / this.state.data[0].value) * 100;
 
     const animatedPath = this.state.shouldRenderChart ? this.createAnimatedPath() : null;
     return (
@@ -210,8 +205,8 @@ export default class ValueChart extends PureComponent {
         <ValueText
           headerText="PRICE 🥳"
           startValue={this.state.data[this.state.data.length - 1].value}
-          direction={changeDirection}
-          change={change}
+          direction={change > 0}
+          change={change.toFixed(2)}
           ref={component => { this._text = component; }}
         />
         <PanGestureHandler

@@ -56,7 +56,7 @@ class ValueText extends React.Component {
           ${Number(this.state.text).toFixed(2)}
         </Title>
         <TrendIndicatorText direction={this.props.direction}>
-          {this.props.change}
+          {this.props.change}%
         </TrendIndicatorText>
       </View>
     );
