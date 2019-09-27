@@ -149,7 +149,7 @@ export const expandedPreset = {
   cardStyleInterpolator: expandStyleInterpolator,
   cardTransparent: true,
   gestureDirection: 'vertical',
- // gestureResponseDistance,
+ gestureResponseDistance,
   onTransitionStart,
   transitionSpec: { close: closeSpec, open: openSpec },
 };

@@ -1,21 +1,4 @@
 import {
-<<<<<<< HEAD
-  tradeEthForExactTokens,
-  tradeExactEthForTokens,
-  tradeExactTokensForEth,
-  tradeExactTokensForTokens,
-  tradeTokensForExactEth,
-  tradeTokensForExactTokens,
-} from '@uniswap/sdk';
-import {
-  filter,
-  findIndex,
-  get,
-  isNil,
-  keys,
-  map,
-} from 'lodash';
-=======
   tradeEthForExactTokensWithData,
   tradeExactEthForTokensWithData,
   tradeExactTokensForEthWithData,
@@ -25,22 +8,10 @@ import {
 } from '@uniswap/sdk';
 import BigNumber from 'bignumber.js';
 import { get, isNil } from 'lodash';
->>>>>>> origin/develop
 import PropTypes from 'prop-types';
 import React, { Fragment, PureComponent } from 'react';
 import { InteractionManager, LayoutAnimation, TextInput } from 'react-native';
 import Animated from 'react-native-reanimated';
-<<<<<<< HEAD
-import { NavigationActions, NavigationEvents, withNavigationFocus } from 'react-navigation';
-import { compose, mapProps, toClass, withProps } from 'recompact';
-import { executeSwap } from '../handlers/uniswap';
-import {
-  convertAmountFromNativeValue,
-  convertAmountToNativeAmount,
-  convertAmountToRawAmount,
-  convertRawAmountToDecimalFormat,
-  subtract,
-=======
 import { NavigationEvents, withNavigationFocus } from 'react-navigation';
 import { compose, mapProps, toClass } from 'recompact';
 import { estimateSwapGasLimit, executeSwap } from '../handlers/uniswap';
@@ -53,24 +24,12 @@ import {
   greaterThan,
   subtract,
   updatePrecisionToDisplay,
->>>>>>> origin/develop
 } from '../helpers/utilities';
 import {
   withAccountAddress,
   withAccountData,
   withAccountSettings,
   withBlockedHorizontalSwipe,
-<<<<<<< HEAD
-  withKeyboardFocusHistory,
-  withTransactionConfirmationScreen,
-  withTransitionProps,
-} from '../hoc';
-import { colors, padding, position } from '../styles';
-import { deviceUtils, ethereumUtils, safeAreaInsetValues } from '../utils';
-import {
-  ConfirmExchangeButton,
-  ExchangeGasFeeButton,
-=======
   withGas,
   withKeyboardFocusHistory,
   withTransactionConfirmationScreen,
@@ -87,27 +46,19 @@ import {
 } from '../utils';
 import {
   ConfirmExchangeButton,
->>>>>>> origin/develop
   ExchangeInputField,
   ExchangeModalHeader,
   ExchangeOutputField,
   SlippageWarning,
 } from '../components/exchange';
 import { FloatingPanel, FloatingPanels } from '../components/expanded-state';
-<<<<<<< HEAD
-=======
 import { GasSpeedButton } from '../components/gas';
->>>>>>> origin/develop
 import GestureBlocker from '../components/GestureBlocker';
 import {
   Centered,
   Column,
   KeyboardFixedOpenLayout,
 } from '../components/layout';
-<<<<<<< HEAD
-import { Text } from '../components/text';
-=======
->>>>>>> origin/develop
 import { CurrencySelectionTypes } from './CurrencySelectModal';
 
 export const exchangeModalBorderRadius = 30;
@@ -120,18 +71,6 @@ const isSameAsset = (firstAsset, secondAsset) => {
   }
 
   const firstAddress = get(firstAsset, 'address', '').toLowerCase();
-<<<<<<< HEAD
-  const secondAddress = get(firstAsset, 'address', '').toLowerCase();
-  return firstAddress === secondAddress;
-}
-
-class ExchangeModal extends PureComponent {
-  static propTypes = {
-    allAssets: PropTypes.array,
-    chainId: PropTypes.number,
-    clearKeyboardFocusHistory: PropTypes.func,
-    dataAddNewTransaction: PropTypes.func,
-=======
   const secondAddress = get(secondAsset, 'address', '').toLowerCase();
   return firstAddress === secondAddress;
 };
@@ -150,23 +89,10 @@ class ExchangeModal extends PureComponent {
     gasUpdateTxFee: PropTypes.func,
     isFocused: PropTypes.bool,
     isTransitioning: PropTypes.bool,
->>>>>>> origin/develop
     keyboardFocusHistory: PropTypes.array,
     nativeCurrency: PropTypes.string,
     navigation: PropTypes.object,
     pushKeyboardFocusHistory: PropTypes.func,
-<<<<<<< HEAD
-    tradeDetails: PropTypes.object,
-  }
-
-  state = {
-    inputAmount: null,
-    inputAsExactAmount: false,
-    inputCurrency: ethereumUtils.getAsset(this.props.allAssets),
-    nativeAmount: null,
-    outputAmount: null,
-    outputCurrency: null,
-=======
     resetGasTxFees: PropTypes.func,
     selectedGasPrice: PropTypes.object,
     tokenReserves: PropTypes.array,
@@ -194,20 +120,11 @@ class ExchangeModal extends PureComponent {
     outputCurrency: null,
     outputExecutionRate: null,
     outputNativePrice: null,
->>>>>>> origin/develop
     showConfirmButton: false,
     slippage: null,
     tradeDetails: null,
   }
 
-<<<<<<< HEAD
-  componentDidUpdate = (prevProps) => {
-    const { isFocused, isTransitioning, keyboardFocusHistory} = this.props;
-    const { inputAmount, outputAmount, outputCurrency } = this.state;
-
-    if (isFocused && (!isTransitioning && prevProps.isTransitioning)) {
-      const lastFocusedInput = keyboardFocusHistory[keyboardFocusHistory.length - 2];
-=======
   componentDidUpdate = (prevProps, prevState) => {
     const {
       isFocused,
@@ -217,7 +134,6 @@ class ExchangeModal extends PureComponent {
 
     if (isFocused && (!isTransitioning && prevProps.isTransitioning)) {
       const lastFocusedInput = keyboardFocusHistory[keyboardFocusHistory.length - 1];
->>>>>>> origin/develop
 
       if (lastFocusedInput) {
         InteractionManager.runAfterInteractions(() => {
@@ -229,15 +145,6 @@ class ExchangeModal extends PureComponent {
       }
     }
 
-<<<<<<< HEAD
-    if (inputAmount || outputAmount) {
-      LayoutAnimation.easeInEaseOut();
-    }
-
-    if (outputCurrency) {
-      console.log('should showConfirmButton');
-      this.setState({ showConfirmButton: true });
-=======
     if (this.state.outputCurrency) {
       this.setState({ showConfirmButton: true });
     }
@@ -265,171 +172,10 @@ class ExchangeModal extends PureComponent {
 
     if (isNewValueForPath(this.state, prevState, 'inputCurrency.address')) {
       this.getCurrencyAllowance();
->>>>>>> origin/develop
     }
   }
 
   componentWillUnmount = () => {
-<<<<<<< HEAD
-    this.props.clearKeyboardFocusHistory();
-  }
-
-  inputFieldRef = null
-
-  nativeFieldRef = null
-
-  outputFieldRef = null
-
-  parseTradeDetails = (path, tradeDetails, decimals) => {
-    const updatedValue = get(tradeDetails, path);
-    const slippage = get(tradeDetails, 'marketRateSlippage');
-    const rawUpdatedValue = convertRawAmountToDecimalFormat(updatedValue, decimals);
-    return { rawUpdatedValue, slippage: slippage.toFixed() };
-  };
-
-  getMarketDetails = async () => {
-    try {
-      let tradeDetails = null;
-      const { chainId } = this.props;
-      const {
-        inputAmount,
-        inputAsExactAmount,
-        inputCurrency,
-        outputAmount,
-        outputCurrency,
-      } = this.state;
-      if (inputCurrency === null || outputCurrency === null) return;
-      if (isNil(inputAmount) && isNil(outputAmount)) return;
-      const {
-        address: inputCurrencyAddress,
-        decimals: inputDecimals,
-      } = inputCurrency;
-      const {
-        address: outputCurrencyAddress,
-        decimals: outputDecimals,
-      } = outputCurrency;
-      const rawInputAmount = convertAmountToRawAmount(inputAmount || 0, inputDecimals);
-      const rawOutputAmount = convertAmountToRawAmount(outputAmount || 0, outputDecimals);
-
-      if (inputCurrencyAddress === 'eth' && outputCurrencyAddress !== 'eth') {
-        tradeDetails = inputAsExactAmount
-          ? await tradeExactEthForTokens(outputCurrencyAddress, rawInputAmount, chainId)
-          : await tradeEthForExactTokens(outputCurrencyAddress, rawOutputAmount, chainId);
-      } else if (inputCurrencyAddress !== 'eth' && outputCurrencyAddress === 'eth') {
-        tradeDetails = inputAsExactAmount
-          ? await tradeExactTokensForEth(inputCurrencyAddress, rawInputAmount, chainId)
-          : await tradeTokensForExactEth(inputCurrencyAddress, rawOutputAmount, chainId);
-      } else if (inputCurrencyAddress !== 'eth' && outputCurrencyAddress !== 'eth') {
-        tradeDetails = inputAsExactAmount
-          ? await tradeExactTokensForTokens(inputCurrencyAddress, outputCurrencyAddress, rawInputAmount, chainId)
-          : await tradeTokensForExactTokens(inputCurrencyAddress, outputCurrencyAddress, rawOutputAmount, chainId);
-      }
-      const decimals = inputAsExactAmount ? outputDecimals : inputDecimals;
-      const path = inputAsExactAmount ? 'outputAmount.amount' : 'inputAmount.amount';
-      this.setState({ tradeDetails });
-      const { rawUpdatedValue, slippage } = this.parseTradeDetails(path, tradeDetails, decimals);
-      if (inputAsExactAmount) {
-        this.setState({ outputAmount: rawUpdatedValue, slippage });
-      } else {
-        this.setState({ inputAmount: rawUpdatedValue, slippage });
-      }
-    } catch (error) {
-      console.log('error getting market details', error);
-      // TODO
-    }
-  }
-
-  setInputAsExactAmount = (inputAsExactAmount) => this.setState({ inputAsExactAmount })
-
-  setNativeAmount = async (nativeAmount) => {
-    this.setState({ nativeAmount });
-    const nativePrice = get(this.state.inputCurrency, 'native.price.amount', 0);
-    this.setState({ inputAmount: convertAmountFromNativeValue(nativeAmount, nativePrice) });
-    this.setInputAsExactAmount(true);
-    await this.getMarketDetails();
-  }
-
-  setInputAmount = async (inputAmount) => {
-    this.setState({ inputAmount });
-
-    let newNativeAmount = null;
-    if (inputAmount) {
-      const nativePrice = get(this.state.inputCurrency, 'native.price.amount', 0);
-      newNativeAmount = convertAmountToNativeAmount(inputAmount, nativePrice);
-    }
-
-    this.setState({ nativeAmount: newNativeAmount });
-    this.setInputAsExactAmount(true);
-    await this.getMarketDetails();
-  }
-
-  setOutputAmount = async (outputAmount) => {
-    this.setState({ outputAmount });
-    this.setInputAsExactAmount(false);
-    await this.getMarketDetails();
-  }
-
-  setInputCurrency = (inputCurrencySelection, force) => {
-    const { inputCurrency, outputCurrency } = this.state;
-
-    this.setState({ inputCurrency: inputCurrencySelection });
-
-    if (!force && isSameAsset(inputCurrency, outputCurrency)) {
-      if (outputCurrency !== null && inputCurrency !== null) {
-        return this.setOutputCurrency(null, true);
-      }
-
-      return this.setOutputCurrency(inputCurrency, true);
-    }
-  }
-
-  setOutputCurrency = (outputCurrency, force) => {
-    const { allAssets } = this.props;
-    const { inputCurrency } = this.state;
-
-    this.setState({ outputCurrency });
-
-    if (!force && isSameAsset(inputCurrency, outputCurrency)) {
-      const asset = ethereumUtils.getAsset(allAssets, outputCurrency.address.toLowerCase());
-
-      console.log('asset', asset);
-      //
-      if (inputCurrency !== null && outputCurrency !== null && !isNil(asset)) {
-        this.setInputCurrency(null, true);
-      } else {
-        this.setInputCurrency(outputCurrency, true);
-      }
-    }
-  }
-
-  onPressMaxBalance = () => {
-    const { inputCurrency } = this.state;
-    const balance = get(inputCurrency, 'balance.amount', 0);
-    const inputAmount = (inputCurrency.address === 'eth') ? subtract(balance, 0.01) : balance;
-    this.setState({ inputAmount });
-  }
-
-  handleSelectInputCurrency = () => {
-    this.props.navigation.navigate('CurrencySelectScreen', {
-      type: CurrencySelectionTypes.input,
-      onSelectCurrency: this.setInputCurrency,
-    });
-  }
-
-  handleSelectOutputCurrency = () => {
-    this.props.navigation.navigate('CurrencySelectScreen', {
-      type: CurrencySelectionTypes.output,
-      onSelectCurrency: this.setOutputCurrency,
-    });
-  }
-
-  handleSubmit = async () => {
-    const { accountAddress, dataAddNewTransaction, navigation } = this.props;
-    const { inputAmount, inputCurrency, tradeDetails } = this.state;
-
-    try {
-      const txn = await executeSwap(tradeDetails);
-=======
     this.props.resetGasTxFees();
     this.props.clearKeyboardFocusHistory();
   }
@@ -668,7 +414,6 @@ class ExchangeModal extends PureComponent {
 
     try {
       const txn = await executeSwap(tradeDetails, gasLimit);
->>>>>>> origin/develop
       if (txn) {
         dataAddNewTransaction({
           amount: inputAmount,
@@ -688,54 +433,18 @@ class ExchangeModal extends PureComponent {
 
   handleWillFocus = ({ lastState }) => {
     if (!lastState && this.inputFieldRef) {
-<<<<<<< HEAD
-      return this.inputFieldRef.focus();
-    }
-  }
-
-  handleInputFieldRef = (ref) => { this.inputFieldRef = ref; }
-
-  handleNativeFieldRef = (ref) => { this.nativeFieldRef = ref; }
-
-  handleOutputFieldRef = (ref) => { this.outputFieldRef = ref; }
-
-  handleDidFocus = () => {
-    // console.log('DID FOCUS', this.props.navigation)
-
-    // if (this.inputFieldRef) {
-    //   setTimeout(() => this.inputFieldRef.focus(), 250);
-    // }
-=======
       this.inputFieldRef.focus();
     }
   }
 
   handleDidFocus = () => {
     // console.log('DID FOCUS', this.props.navigation)
->>>>>>> origin/develop
   }
 
   handleFocusField = ({ currentTarget }) => {
     this.props.pushKeyboardFocusHistory(currentTarget);
   }
 
-<<<<<<< HEAD
-  render = () => {
-    const {
-      keyboardFocusHistory,
-      nativeCurrency,
-      navigation,
-      onPressConfirmExchange,
-      transitionPosition,
-    } = this.props;
-
-    const {
-      inputAmount,
-      inputCurrency,
-      nativeAmount,
-      outputAmount,
-      outputCurrency,
-=======
   handleUnlockAsset = async () => {
     /*
     const {
@@ -864,7 +573,6 @@ class ExchangeModal extends PureComponent {
       outputCurrency,
       // outputExecutionRate,
       // outputNativePrice,
->>>>>>> origin/develop
       showConfirmButton,
       slippage,
     } = this.state;
@@ -890,36 +598,6 @@ class ExchangeModal extends PureComponent {
               }),
             }}
           >
-<<<<<<< HEAD
-            <GestureBlocker type='top'/>
-            <FloatingPanel radius={exchangeModalBorderRadius}>
-              <ExchangeModalHeader />
-              <Column align="center" flex={0}>
-                <ExchangeInputField
-                  inputAmount={inputAmount}
-                  inputCurrency={get(inputCurrency, 'symbol', null)}
-                  inputFieldRef={this.handleInputFieldRef}
-                  nativeAmount={nativeAmount}
-                  nativeCurrency={nativeCurrency}
-                  nativeFieldRef={this.handleNativeFieldRef}
-                  onFocus={this.handleFocusField}
-                  onPressMaxBalance={this.onPressMaxBalance}
-                  onPressSelectInputCurrency={this.handleSelectInputCurrency}
-                  setInputAmount={this.setInputAmount}
-                  setNativeAmount={this.setNativeAmount}
-                />
-                <ExchangeOutputField
-                  onPressSelectOutputCurrency={this.handleSelectOutputCurrency}
-                  outputAmount={outputAmount}
-                  onFocus={this.handleFocusField}
-                  outputCurrency={get(outputCurrency, 'symbol', null)}
-                  outputFieldRef={this.handleOutputFieldRef}
-                  setOutputAmount={this.setOutputAmount}
-                />
-              </Column>
-            </FloatingPanel>
-            <SlippageWarning slippage={slippage} />
-=======
             <FloatingPanel radius={exchangeModalBorderRadius} overflow='visible'>
               <GestureBlocker type='top'/>
               <ExchangeModalHeader />
@@ -950,7 +628,6 @@ class ExchangeModal extends PureComponent {
               />
             </FloatingPanel>
             {isSufficientBalance && <SlippageWarning slippage={slippage} />}
->>>>>>> origin/develop
             {showConfirmButton && (
               <Fragment>
                 <Centered
@@ -959,18 +636,6 @@ class ExchangeModal extends PureComponent {
                   width="100%"
                 >
                   <ConfirmExchangeButton
-<<<<<<< HEAD
-                    disabled={!Number(inputAmount)}
-                    onPress={this.handleSubmit}
-                  />
-                </Centered>
-                <ExchangeGasFeeButton
-                  gasPrice={'$0.06'}
-                />
-              </Fragment>
-            )}
-            <GestureBlocker type='bottom'/>
-=======
                     disabled={isAssetApproved && !Number(inputAmountDisplay)}
                     inputCurrencyName={get(inputCurrency, 'symbol')}
                     isAssetApproved={isAssetApproved}
@@ -987,7 +652,6 @@ class ExchangeModal extends PureComponent {
             <Column>
               <GestureBlocker type='bottom'/>
             </Column>
->>>>>>> origin/develop
           </AnimatedFloatingPanels>
         </Centered>
       </KeyboardFixedOpenLayout>
@@ -995,35 +659,11 @@ class ExchangeModal extends PureComponent {
   }
 }
 
-<<<<<<< HEAD
-const withMockedPrices = withProps({
-  currencyToDollar: 3,
-  targetCurrencyToDollar: 2,
-});
-
-=======
->>>>>>> origin/develop
 export default compose(
   withAccountAddress,
   withAccountData,
   withAccountSettings,
   withBlockedHorizontalSwipe,
-<<<<<<< HEAD
-  withKeyboardFocusHistory,
-  withMockedPrices,
-  withNavigationFocus,
-  withTransactionConfirmationScreen,
-  withTransitionProps,
-  mapProps(({
-    navigation,
-    tabsTransitionProps: {
-      isTransitioning: isTabsTransitioning,
-    },
-    stackTransitionProps: {
-      isTransitioning:  isStacksTransitioning,
-    },
-    ...props,
-=======
   withGas,
   withKeyboardFocusHistory,
   withNavigationFocus,
@@ -1040,7 +680,6 @@ export default compose(
       isTransitioning: isTabsTransitioning,
     },
     ...props
->>>>>>> origin/develop
   }) => ({
     ...props,
     isTransitioning: isStacksTransitioning || isTabsTransitioning,
