@@ -14,10 +14,7 @@ import { deviceUtils, safeAreaInsetValues } from '../utils';
 import ChartExpandedState from '../components/expanded-state/ChartExpandedState';
 import { addNewLocalContact } from '../handlers/commonStorage';
 
-const {
-  bottom: safeAreaBottom,
-  top: safeAreaTop,
-} = safeAreaInsetValues;
+const { bottom: safeAreaBottom, top: safeAreaTop } = safeAreaInsetValues;
 
 const ScreenTypes = {
   chart: ChartExpandedState,
@@ -36,19 +33,19 @@ export default class ExpandedAssetScreen extends Component {
     onPressBackground: PropTypes.func,
     panelWidth: PropTypes.number,
     type: PropTypes.oneOf(Object.keys(ScreenTypes)).isRequired,
-  }
+  };
 
   static defaultProps = {
     containerPadding: 15,
-  }
+  };
 
   state = {
     color: 0,
     shouldSave: false,
     value: '',
-  }
+  };
 
-  shouldComponentUpdate = () => false
+  shouldComponentUpdate = () => false;
 
   componentWillUnmount = async () => {
     const { address, onCloseModal, type } = this.props;
@@ -58,7 +55,7 @@ export default class ExpandedAssetScreen extends Component {
       await addNewLocalContact(address, value, color);
       onCloseModal();
     }
-  }
+  };
 
   setNewValuesToSave = (value, color, shouldSave = true) => {
     this.setState({
@@ -66,12 +63,16 @@ export default class ExpandedAssetScreen extends Component {
       shouldSave,
       value,
     });
-  }
+  };
 
   render = () => (
     <Centered
       {...deviceUtils.dimensions}
-      css={padding(safeAreaTop, this.props.containerPadding, safeAreaBottom || safeAreaTop)}
+      css={padding(
+        safeAreaTop,
+        this.props.containerPadding,
+        safeAreaBottom || safeAreaTop
+      )}
       direction="column"
     >
       <StatusBar barStyle="light-content" />
@@ -81,5 +82,5 @@ export default class ExpandedAssetScreen extends Component {
         onUnmountModal: this.setNewValuesToSave,
       })}
     </Centered>
-  )
+  );
 }
