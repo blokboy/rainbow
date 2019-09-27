@@ -15,7 +15,11 @@ import BlurOverlay from '../components/BlurOverlay';
 import { FabWrapper } from '../components/fab';
 import { CameraHeaderButton, Header, ProfileHeaderButton } from '../components/header';
 import { Page } from '../components/layout';
-import { getShowShitcoinsSetting, updateShowShitcoinsSetting } from '../handlers/commonStorage';
+import {
+  getSmallBalanceToggle,
+  getOpenInvestmentCards,
+  getOpenFamilies,
+} from '../handlers/commonStorage';
 import buildWalletSectionsSelector from '../helpers/buildWalletSections';
 import {
   withAccountData,
@@ -28,6 +32,10 @@ import {
   withUniqueTokens,
   withUniswapLiquidity,
 } from '../hoc';
+import { setOpenSmallBalances } from '../redux/openBalances';
+import { pushOpenFamilyTab } from '../redux/openFamilyTabs';
+import { pushOpenInvestmentCard } from '../redux/openInvestmentCards';
+import store from '../redux/store';
 import { position } from '../styles';
 import { deviceUtils, isNewValueForPath } from '../utils';
 
@@ -46,19 +54,25 @@ class WalletScreen extends Component {
     scrollViewTracker: PropTypes.object,
     sections: PropTypes.array,
     setSafeTimeout: PropTypes.func,
-    toggleShowShitcoins: PropTypes.func,
     uniqueTokens: PropTypes.array,
+  }
+
+  setInitialStatesForOpenAssets = async () => {
+    const toggle = await getSmallBalanceToggle();
+    const openInvestmentCards = await getOpenInvestmentCards();
+    const openFamilies = await getOpenFamilies();
+    await store.dispatch(setOpenSmallBalances(toggle));
+    await store.dispatch(pushOpenInvestmentCard(openInvestmentCards));
+    await store.dispatch(pushOpenFamilyTab(openFamilies));
+    return true;
   }
 
   componentDidMount = async () => {
     try {
+      await this.setInitialStatesForOpenAssets();
       await this.props.initializeWallet();
-      const showShitcoins = await getShowShitcoinsSetting();
-      if (showShitcoins !== null) {
-        this.props.toggleShowShitcoins(showShitcoins);
-      }
     } catch (error) {
-      // TODO
+      // TODO error state
     }
   }
 
@@ -71,17 +85,21 @@ class WalletScreen extends Component {
     const isNewIsWalletEthZero = isNewValueForPath(this.props, nextProps, 'isWalletEthZero');
     const isNewLanguage = isNewValueForPath(this.props, nextProps, 'language');
     const isNewSections = isNewValueForPath(this.props, nextProps, 'sections');
-    const isNewShowShitcoins = isNewValueForPath(this.props, nextProps, 'showShitcoins');
+    const isNewTransitionProps = isNewValueForPath(this.props, nextProps, 'transitionProps');
+
+    if (!nextProps.isFocused) {
+      return isNewBlurIntensity || isNewTransitionProps;
+    }
 
     return isNewFetchingAssets
-      || isNewFetchingUniqueTokens
-      || isNewIsWalletEmpty
-      || isNewIsWalletEthZero
-      || isNewLanguage
-      || isNewCurrency
-      || isNewBlurIntensity
-      || isNewSections
-      || isNewShowShitcoins;
+    || isNewFetchingUniqueTokens
+    || isNewIsWalletEmpty
+    || isNewIsWalletEthZero
+    || isNewLanguage
+    || isNewCurrency
+    || isNewBlurIntensity
+    || isNewSections
+    || isNewTransitionProps;
   }
 
   render = () => {
@@ -136,22 +154,6 @@ export default compose(
   withIsWalletEmpty,
   withIsWalletEthZero,
   withStatusBarStyle('dark-content'),
-  withState('showShitcoins', 'toggleShowShitcoins', true),
-  withHandlers({
-    onToggleShowShitcoins: ({ showShitcoins, toggleShowShitcoins }) => (index) => {
-      if (index === 0) {
-        const updatedShowShitcoinsSetting = !showShitcoins;
-        toggleShowShitcoins(updatedShowShitcoinsSetting);
-        updateShowShitcoinsSetting(updatedShowShitcoinsSetting);
-
-        if (updatedShowShitcoinsSetting) {
-          analytics.track('Showed shitcoins');
-        } else {
-          analytics.track('Hid shitcoins');
-        }
-      }
-    },
-  }),
   withProps(buildWalletSectionsSelector),
   withProps({ scrollViewTracker: new Animated.Value(0) }),
 )(WalletScreen);

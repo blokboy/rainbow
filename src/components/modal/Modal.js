@@ -27,6 +27,7 @@ const Modal = ({
     padding={containerPadding}
     width="100%"
   >
+    <StatusBar barStyle={statusBarStyle} />
     <TouchableBackdrop onPress={onCloseModal} />
     <ModalElement
       {...props}

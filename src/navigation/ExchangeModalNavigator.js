@@ -6,7 +6,6 @@ import { updateTabsTransitionProps } from '../redux/navigation';
 import store from '../redux/store';
 import CurrencySelectModal from '../screens/CurrencySelectModal';
 import ExchangeModal from '../screens/ExchangeModal';
-import { colors } from '../styles';
 import { deviceUtils } from '../utils';
 
 const onTransitionEnd = () => store.dispatch(updateTabsTransitionProps({ isTransitioning: false }));
@@ -54,12 +53,15 @@ const ExchangeModalNavigator = createMaterialTopTabNavigator({
 
 // I need it for changing navigationOptions dynamically
 // for preventing swipe down to close on CurrencySelectScreen
-const EnhancedExchangeModalNavigator = props => <ExchangeModalNavigator {...props} />;//React.memo();
-
+const EnhancedExchangeModalNavigator = React.memo(props => <ExchangeModalNavigator {...props} />);
 EnhancedExchangeModalNavigator.router = ExchangeModalNavigator.router;
-EnhancedExchangeModalNavigator.navigationOptions = ({ navigation }) => ({
-  ...navigation.state.params,
-  gesturesEnabled: !get(navigation, 'state.params.isGestureBlocked'),
-});
+EnhancedExchangeModalNavigator.navigationOptions = ({ navigation }) => {
+  // console.log('navigation', navigation);
+
+  return ({
+    ...navigation.state.params,
+    gestureEnabled: !get(navigation, 'state.params.isGestureBlocked'),
+  });
+};
 
 export default EnhancedExchangeModalNavigator;

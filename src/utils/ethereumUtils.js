@@ -8,11 +8,11 @@ import {
   subtract,
 } from '../helpers/utilities';
 
-export const getBalanceAmount = (gasPrice, selected) => {
+export const getBalanceAmount = (selectedGasPrice, selected) => {
   let amount = '';
   if (selected.address === 'eth') {
     const balanceAmount = get(selected, 'balance.amount', 0);
-    const txFeeRaw = get(gasPrice, 'txFee.value.amount');
+    const txFeeRaw = get(selectedGasPrice, 'txFee.value.amount');
     const txFeeAmount = fromWei(txFeeRaw);
     const remaining = subtract(balanceAmount, txFeeAmount);
     amount = convertNumberToString(greaterThan(remaining, 0) ? remaining : 0);

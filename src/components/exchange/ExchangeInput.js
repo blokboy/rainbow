@@ -6,6 +6,7 @@ import { colors, fonts } from '../../styles';
 
 export default class ExchangeInput extends PureComponent {
   static propTypes = {
+    color: PropTypes.string,
     disableTabularNums: PropTypes.bool,
     fontFamily: PropTypes.string,
     fontSize: PropTypes.string,
@@ -14,11 +15,13 @@ export default class ExchangeInput extends PureComponent {
     onChangeText: PropTypes.func,
     placeholder: PropTypes.string,
     placeholderTextColor: PropTypes.string,
+    refInput: PropTypes.func,
     style: stylePropType,
     value: PropTypes.string,
   }
 
   static defaultProps = {
+    color: colors.dark,
     fontFamily: fonts.family.SFProDisplay,
     fontSize: fonts.size.h2,
     fontWeight: fonts.weight.medium,
@@ -27,19 +30,18 @@ export default class ExchangeInput extends PureComponent {
     placeholderTextColor: colors.alpha(colors.blueGreyDark, 0.5),
   }
 
-  onChangeText = (formatted, extracted) => {
-    // XXX TODO: some funky stuff is going on here related to the '$' symbol in the input mask
-    this.props.onChangeText(!!extracted ? formatted : '');
+  handleChangeText = (formatted, extracted) => {
+    this.props.onChangeText(extracted ? formatted : '');
   }
 
   render = () => {
     const {
+      color,
       disableTabularNums,
       fontFamily,
       fontSize,
       fontWeight,
       mask,
-      onChangeText,
       placeholder,
       placeholderTextColor,
       refInput,
@@ -55,13 +57,13 @@ export default class ExchangeInput extends PureComponent {
         keyboardAppearance="dark"
         keyboardType="decimal-pad"
         mask={mask}
-        onChangeText={this.onChangeText}
+        onChangeText={this.handleChangeText}
         placeholder={placeholder}
         placeholderTextColor={placeholderTextColor}
         refInput={refInput}
         selectionColor={colors.appleBlue}
         style={[{
-          color: colors.dark,
+          color,
           fontFamily,
           fontSize: parseFloat(fontSize),
           fontVariant: disableTabularNums ? undefined : ['tabular-nums'],

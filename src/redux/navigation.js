@@ -18,6 +18,8 @@ export const updateTabsTransitionProps = (payload) => (dispatch) => {
 // -- Reducer ----------------------------------------- //
 const INITIAL_STATE = {
   stackTransitionProps: {
+    blurColor: null,
+    effect: '',
     isTransitioning: false,
     position: new Value(0),
   },

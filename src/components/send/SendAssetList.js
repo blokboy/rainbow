@@ -21,8 +21,8 @@ const familyHeaderHeight = 64;
 const dividerHeight = 18;
 
 const Divider = styled.View`
+  background-color: ${colors.lighterGrey};
   height: 2px;
-  background-color: ${colors.lightGrey};
   margin: 10px 19px;
   width: 100%;
 `;
@@ -63,8 +63,8 @@ class SendAssetList extends React.Component {
       const heightBelow = this.props.allAssets.length * rowHeight + familiesHeight + dividerHeight;
       const renderSize = familyHeaderHeight + this.props.uniqueTokens[index].data.length * rowHeight;
       const screenHeight = this.position + this.componentHeight;
-      if (heightBelow + renderSize + 64 > screenHeight) {
-        if (renderSize < this.componentHeight) {
+      if(heightBelow + renderSize + 64 > screenHeight) {
+        if(renderSize < this.componentHeight) {
           setTimeout(() => {
             this.rlv.scrollToOffset(0, this.position + (heightBelow + renderSize - screenHeight + familyHeaderHeight), true);
           }, 10);
@@ -95,8 +95,8 @@ class SendAssetList extends React.Component {
     </Fragment>
   );
 
-  collectiblesRenderItem = item => (
-    <View>
+  collectiblesRenderItem = item => {
+    return <View>
       <TokenFamilyHeader
         isCoinRow
         familyName={item.name}
@@ -106,8 +106,8 @@ class SendAssetList extends React.Component {
         onHeaderPress={() => { this.changeOpenTab(item.familyId); }}
       />
       {this.state.openCards[item.familyId] && this.mapTokens(item.data)}
-    </View>
-  );
+    </View>;
+  }
 
   constructor(args) {
     super(args);
@@ -134,6 +134,12 @@ class SendAssetList extends React.Component {
         return 'COIN_ROW';
       } if (i === this.props.allAssets.length - 1) {
         return 'COIN_ROW_LAST';
+      } else {
+        if (this.state.openCards[this.props.uniqueTokens[i - this.props.allAssets.length].familyId]) {
+          return { type: 'COLLECTIBLE_ROW', size: this.props.uniqueTokens[i - this.props.allAssets.length].data.length + 1 };
+        } else {
+          return 'COLLECTIBLE_ROW_CLOSED';
+        }
       }
       if (this.state.openCards[i - this.props.allAssets.length]) {
         return {

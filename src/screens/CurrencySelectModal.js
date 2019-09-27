@@ -1,6 +1,6 @@
 import { get, map, property } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { Component, PureComponent } from 'react';
+import React, { PureComponent } from 'react';
 import { InteractionManager, View } from 'react-native';
 import { compose, mapProps, withProps } from 'recompact';
 import { NavigationEvents, withNavigationFocus } from 'react-navigation';
@@ -12,7 +12,7 @@ import {
   withUniswapAssets,
 } from '../hoc';
 import { borders, colors, position } from '../styles';
-import { isNewValueForPath, safeAreaInsetValues } from '../utils';
+import { isNewValueForPath } from '../utils';
 import { filterList } from '../utils/search';
 import { EmptyAssetList } from '../components/asset-list';
 import { ExchangeCoinRow } from '../components/coin-row';
@@ -191,6 +191,8 @@ class CurrencySelectModal extends PureComponent {
       isTransitioning || listItems.length === 0
     );
 
+    // console.log('listItems', listItems);
+
     // console.log('isFocused', isFocused ? '👍️' : '👎️', ' ', isFocused);
 
     return (
@@ -202,7 +204,7 @@ class CurrencySelectModal extends PureComponent {
               extrapolate: 'clamp',
               inputRange: [0, 1],
               outputRange: [0, 1],
-            })
+            }),
           }}
         >
           <Modal
@@ -237,13 +239,14 @@ class CurrencySelectModal extends PureComponent {
                 ref={this.searchInputRef}
               />
               <View flex={1}>
-                <ExchangeAssetList
+                {isFocused ? <ExchangeAssetList
+                  key={`ExchangeAssetListCurrencySelectionModal-${type}`}
                   items={listItems}
                   renderItem={this.renderCurrencyItem}
                   scrollIndicatorInsets={{
                     bottom: exchangeModalBorderRadius,
                   }}
-                />
+                /> : null}
                 <EmptyAssetList
                   {...position.coverAsObject}
                   backgroundColor={colors.white}
@@ -270,7 +273,7 @@ export default compose(
     navigation,
     sortedUniswapAssets,
     tabsTransitionProps: { isTransitioning },
-    ...props,
+    ...props
   }) => ({
     ...props,
     assetsAvailableOnUniswap: normalizeAssetItems(assetsAvailableOnUniswap),

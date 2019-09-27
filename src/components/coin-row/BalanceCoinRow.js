@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, { Fragment } from 'react';
 import { compose, shouldUpdate, withHandlers } from 'recompact';
 import { buildAssetUniqueIdentifier } from '../../helpers/assets';
-import { withAccountSettings } from '../../hoc';
+import { withAccountSettings, withOpenBalances } from '../../hoc';
 import { colors } from '../../styles';
 import { isNewValueForPath } from '../../utils';
 import { ButtonPressAnimation } from '../animations';
@@ -65,9 +65,11 @@ TopRow.propTypes = {
 };
 
 const BalanceCoinRow = ({
+  isSmall,
   item,
   onPress,
   onPressSend,
+  openSmallBalances,
   ...props
 }) => (
   <ButtonPressAnimation onPress={onPress} scaleTo={0.96}>
@@ -87,10 +89,12 @@ BalanceCoinRow.propTypes = {
   nativeCurrency: PropTypes.string.isRequired,
   onPress: PropTypes.func,
   onPressSend: PropTypes.func,
+  openSmallBalances: PropTypes.bool,
 };
 
 export default compose(
   withAccountSettings,
+  withOpenBalances,
   withHandlers({
     onPress: ({ item, onPress }) => () => {
       if (onPress) {
@@ -104,12 +108,13 @@ export default compose(
     },
   }),
   shouldUpdate((props, nextProps) => {
+    const isChangeInOpenAssets = props.openSmallBalances !== nextProps.openSmallBalances;
     const itemIdentifier = buildAssetUniqueIdentifier(props.item);
     const nextItemIdentifier = buildAssetUniqueIdentifier(nextProps.item);
 
     const isNewItem = itemIdentifier !== nextItemIdentifier;
     const isNewNativeCurrency = isNewValueForPath(props, nextProps, 'nativeCurrency');
 
-    return isNewItem || isNewNativeCurrency;
+    return isNewItem || isNewNativeCurrency || isChangeInOpenAssets;
   }),
 )(BalanceCoinRow);

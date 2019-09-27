@@ -3,11 +3,13 @@ import { get } from 'lodash';
 import React from 'react';
 import {
   createAppContainer,
-  createMaterialTopTabNavigator,
 } from 'react-navigation';
+import { createMaterialTopTabNavigator } from 'react-navigation-tabs';
 import { createStackNavigator } from 'react-navigation-stack';
 import { ExchangeModalNavigator, Navigation } from '../navigation';
 import { updateStackTransitionProps } from '../redux/navigation';
+import store from '../redux/store';
+import { colors } from '../styles';
 import { deviceUtils } from '../utils';
 import store from '../redux/store';
 import { colors } from '../styles';
@@ -69,6 +71,7 @@ const MainNavigator = createStackNavigator({
   ConfirmRequest: {
     navigationOptions: {
       ...expandedPreset,
+      onTransitionStart: props => { expandedPreset.onTransitionStart(props); onTransitionStart(); },
     },
     screen: TransactionConfirmationScreenWithData,
   },
@@ -76,6 +79,10 @@ const MainNavigator = createStackNavigator({
   ExchangeModal: {
     navigationOptions: {
       ...expandedPreset,
+      gestureResponseDistance: {
+        vertical: deviceUtils.dimensions.height,
+      },
+      onTransitionStart: props => { expandedPreset.onTransitionStart(props); onTransitionStart(); },
     },
     params: {
       isGestureBlocked: false,
@@ -85,18 +92,21 @@ const MainNavigator = createStackNavigator({
   ExpandedAssetScreen: {
     navigationOptions: {
       ...expandedPreset,
+      onTransitionStart: props => { expandedPreset.onTransitionStart(props); onTransitionStart(); },
     },
     screen: ExpandedAssetScreenWithData,
   },
   ImportSeedPhraseSheet: {
     navigationOptions: {
       ...sheetPreset,
+      onTransitionStart: props => { sheetPreset.onTransitionStart(props); onTransitionStart(); },
     },
     screen: ImportSeedPhraseSheetWithData,
   },
   ReceiveModal: {
     navigationOptions: {
       ...expandedPreset,
+      onTransitionStart: props => { expandedPreset.onTransitionStart(props); onTransitionStart(); },
     },
     screen: ReceiveModal,
   },
@@ -104,7 +114,8 @@ const MainNavigator = createStackNavigator({
     navigationOptions: {
       ...sheetPreset,
       onTransitionStart: props => {
-        onTransitionStartEffect(props);
+        onTransitionStart(props);
+        sheetPreset.onTransitionStart(props)
         restoreKeyboard();
       },
     },
@@ -112,10 +123,13 @@ const MainNavigator = createStackNavigator({
   },
   SettingsModal: {
     navigationOptions: {
-      ...expandedPreset,
       gesturesEnabled: false,
+      ...expandedPreset,
+      onTransitionStart: props => { expandedPreset.onTransitionStart(props); onTransitionStart(); },
     },
     screen: SettingsModal,
+    transparentCard: true,
+
   },
   SwipeLayout: {
     navigationOptions: {
@@ -126,6 +140,7 @@ const MainNavigator = createStackNavigator({
   WalletConnectConfirmationModal: {
     navigationOptions: {
       ...expandedPreset,
+      onTransitionStart: props => { expandedPreset.onTransitionStart(props); onTransitionStart(); },
     },
     screen: WalletConnectConfirmationModal,
   },
@@ -134,6 +149,7 @@ const MainNavigator = createStackNavigator({
     onTransitionEnd,
     onTransitionStart,
   },
+  disableKeyboardHandling: true, // XXX not sure about this from rebase
   headerMode: 'none',
   initialRouteName: 'SwipeLayout',
   keyboardDismissMode: 'none', // true?

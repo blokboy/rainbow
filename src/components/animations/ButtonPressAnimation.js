@@ -61,11 +61,27 @@ const AnimatedRawButton = createNativeWrapper(
   createAnimatedComponent(PureNativeButton),
   {
     shouldActivateOnStart: true,
-    shouldCancelWhenOutside: false,
+    shouldCancelWhenOutside: true,
   },
 );
 
+const AnimatedRawButtonPropBlacklist = [
+  'onLongPress',
+  'onPress',
+  'onPressStart',
+];
+
 const NOOP = () => undefined;
+
+const HapticFeedbackTypes = {
+  impactHeavy: 'impactHeavy',
+  impactLight: 'impactLight',
+  impactMedium: 'impactMedium',
+  notificationError: 'notificationError',
+  notificationSuccess: 'notificationSuccess',
+  notificationWarning: 'notificationWarning',
+  selection: 'selection',
+};
 
 export default class ButtonPressAnimation extends PureComponent {
   static propTypes = {
@@ -77,8 +93,12 @@ export default class ButtonPressAnimation extends PureComponent {
     easing: PropTypes.object,
     enableHapticFeedback: PropTypes.bool,
     exclusive: PropTypes.bool,
+    hapticType: PropTypes.oneOf(Object.keys(HapticFeedbackTypes)),
     isInteraction: PropTypes.bool,
+    minLongPressDuration: PropTypes.number,
+    onLongPress: PropTypes.func,
     onPress: PropTypes.func,
+    onPressStart: PropTypes.func,
     scaleTo: PropTypes.number,
     style: stylePropType,
     tapRef: PropTypes.object,
@@ -92,6 +112,8 @@ export default class ButtonPressAnimation extends PureComponent {
     easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
     enableHapticFeedback: true,
     exclusive: true,
+    hapticType: HapticFeedbackTypes.selection,
+    minLongPressDuration: 500,
     scaleTo: animations.keyframes.button.to.scale,
   }
 
@@ -101,6 +123,8 @@ export default class ButtonPressAnimation extends PureComponent {
     this.clock = new Clock();
     this.gestureState = new Value(UNDETERMINED);
     this.handle = undefined;
+    this.longPressDetected = false;
+    this.longPressTimeout = undefined;
     this.scale = new Value(1);
     this.shouldSpring = new Value(-1);
 
@@ -127,23 +151,42 @@ export default class ButtonPressAnimation extends PureComponent {
     }]);
   }
 
-  componentWillUnmount = () => this.clearInteraction()
+  componentWillUnmount = () => {
+    this.reset();
+  }
 
   clearInteraction = () => {
     if (this.props.isInteraction && this.handle) {
       InteractionManager.clearInteractionHandle(this.handle);
+      this.handle = undefined;
+    }
+  }
+
+  clearLongPressListener = () => {
+    this.longPressDetected = false;
+    if (this.longPressTimeout) {
+      clearTimeout(this.longPressTimeout);
     }
   }
 
   createInteraction = () => {
-    if (this.props.isInteraction) {
+    if (this.props.isInteraction && !this.handle) {
       this.handle = InteractionManager.createInteractionHandle();
     }
   }
 
+  createLongPressListener = () => {
+    const { minLongPressDuration, onLongPress } = this.props;
+    if (onLongPress) {
+      this.longPressTimeout = setTimeout(this.handleDetectedLongPress, minLongPressDuration);
+    }
+  }
+
   handleHaptic = () => {
-    if (this.props.enableHapticFeedback) {
-      ReactNativeHapticFeedback.trigger('selection');
+    const { enableHapticFeedback, hapticType } = this.props;
+
+    if (enableHapticFeedback) {
+      ReactNativeHapticFeedback.trigger(hapticType);
     }
   }
 
@@ -154,9 +197,20 @@ export default class ButtonPressAnimation extends PureComponent {
     }
   }
 
+  handleDetectedLongPress = () => {
+    this.longPressDetected = true;
+    this.props.onLongPress();
+  }
+
   handlePress = () => {
-    if (this.props.onPress) {
+    if (!this.longPressDetected && this.props.onPress) {
       this.props.onPress();
+    }
+  }
+
+  handlePressStart = () => {
+    if (this.props.onPressStart) {
+      this.props.onPressStart();
     }
   }
 
@@ -165,6 +219,11 @@ export default class ButtonPressAnimation extends PureComponent {
       ? InteractionManager.runAfterInteractions(this.handlePress)
       : this.handlePress()
   )
+
+  reset = () => {
+    this.clearInteraction();
+    this.clearLongPressListener();
+  }
 
   render = () => {
     const {
@@ -207,7 +266,7 @@ export default class ButtonPressAnimation extends PureComponent {
     return (
       <Fragment>
         <AnimatedRawButton
-          {...omit(props, 'onPress')}
+          {...omit(props, AnimatedRawButtonPropBlacklist)}
           backgroundColor={colors.transparent}
           enabled={!disabled}
           exclusive={exclusive}
@@ -232,13 +291,20 @@ export default class ButtonPressAnimation extends PureComponent {
               ),
               cond(
                 contains([FAILED, CANCELLED], this.gestureState),
-                set(this.shouldSpring, 0),
+                [
+                  set(this.shouldSpring, 0),
+                  call([], this.reset),
+                ],
               ),
               onChange(
                 this.gestureState,
                 cond(
                   eq(this.gestureState, ACTIVE),
-                  call([], this.createInteraction),
+                  [
+                    call([], this.createInteraction),
+                    call([], this.createLongPressListener),
+                    call([], this.handlePressStart),
+                  ],
                   // else if
                   cond(
                     eq(this.gestureState, END),
@@ -251,10 +317,13 @@ export default class ButtonPressAnimation extends PureComponent {
               ),
               cond(
                 eq(this.gestureState, END),
-                runDelay([
-                  set(this.shouldSpring, 0),
-                  call([], this.clearInteraction),
-                ], duration),
+                runDelay(
+                  [
+                    set(this.shouldSpring, 0),
+                    call([], this.clearInteraction),
+                  ],
+                  duration,
+                ),
               ),
               set(
                 this.scale,

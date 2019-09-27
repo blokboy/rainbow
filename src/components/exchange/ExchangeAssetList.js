@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 import { LayoutAnimation, View } from 'react-native';
 import { DataProvider, LayoutProvider, RecyclerListView } from "recyclerlistview";
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import styled from 'styled-components/primitives';
 import { deviceUtils, isNewValueForPath } from '../../utils';
 import { colors } from '../../styles';
@@ -23,8 +24,6 @@ const layoutItemAnimator = {
   animateWillUnmount: NOOP,
   animateWillUpdate: NOOP,
 };
-
-const buildUniqueIdForListData = (items = []) => items.map(property('address')).join('_');
 
 const getLayoutTypeForIndex = () => ViewTypes.COIN_ROW;
 
@@ -66,7 +65,7 @@ export default class ExchangeAssetList extends PureComponent {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.props.items.length !== prevProps.items.length) {
-      this.rlvRef.current.forceRerender();
+      //this.rlvRef.current.forceRerender();
       this.updateList();
     }
   }
@@ -74,7 +73,7 @@ export default class ExchangeAssetList extends PureComponent {
   updateList = () => {
     this.setState((prevState) => ({
       dataProvider: prevState.dataProvider.cloneWithRows(this.props.items),
-    }))
+    }));
   }
 
   getStableId = (index) => get(this.state, `dataProvider._data[${index}].uniqueId`)
