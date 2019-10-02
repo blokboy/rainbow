@@ -138,6 +138,7 @@ class SendHeader extends PureComponent {
       onPressPaste,
       recipient,
     } = this.props;
+    console.log('RENDER send header', recipient);
 
     const isPreExistingContact = contact.nickname.length > 0;
 

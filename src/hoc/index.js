@@ -36,6 +36,7 @@ export {
 export {
   default as withSafeAreaViewInsetValues,
 } from './withSafeAreaViewInsetValues';
+export { default as withSend } from './withSend';
 export { default as withSendFeedback } from './withSendFeedback';
 export { default as withStatusBarStyle } from './withStatusBarStyle';
 export {

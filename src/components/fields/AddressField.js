@@ -44,7 +44,7 @@ export default class AddressField extends React.Component {
   };
 
   shouldComponentUpdate(nextProps, nextState) {
-    const isNewAddress = isNewValueForPath(this.props, this.state, 'address');
+    const isNewAddress = isNewValueForPath(nextProps, this.state, 'address');
     const isNewInputValue = isNewValueForPath(
       this.state,
       nextState,

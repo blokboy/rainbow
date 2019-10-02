@@ -179,7 +179,7 @@ const getSelectedGasPrice = (
   };
 };
 
-export const gasClearState = () => () => {
+export const gasClearState = () => dispatch => {
   clearInterval(getGasPricesInterval);
 };
 
