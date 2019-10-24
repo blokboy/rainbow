@@ -10,15 +10,13 @@ import { borders, colors, position } from '../styles';
 import { isNewValueForPath } from '../utils';
 import { filterList } from '../utils/search';
 import { interpolate } from '../components/animations';
-import { EmptyAssetList } from '../components/asset-list';
 import { ExchangeCoinRow } from '../components/coin-row';
-import { ExchangeAssetList, ExchangeSearch } from '../components/exchange';
+import { CurrencySelectionList, ExchangeSearch } from '../components/exchange';
 import GestureBlocker from '../components/GestureBlocker';
 import { BackButton } from '../components/header';
 import {
   Centered,
   Column,
-  FlexItem,
   KeyboardFixedOpenLayout,
 } from '../components/layout';
 import { Modal } from '../components/modal';
@@ -176,8 +174,6 @@ class CurrencySelectModal extends Component {
 
     const listItems = filterList(assets, searchQuery, 'uniqueId');
 
-    const isLoading = !isFocused || listItems.length === 0;
-
     return (
       <KeyboardFixedOpenLayout>
         <Animated.View
@@ -219,24 +215,13 @@ class CurrencySelectModal extends Component {
                 ref={this.searchInputRef}
                 searchQuery={searchQuery}
               />
-              <FlexItem>
-                {isFocused ? (
-                  <ExchangeAssetList
-                    key={`ExchangeAssetListCurrencySelectionModal-${type}`}
-                    items={listItems}
-                    renderItem={this.renderCurrencyItem}
-                    scrollIndicatorInsets={{
-                      bottom: exchangeModalBorderRadius,
-                    }}
-                  />
-                ) : null}
-                <EmptyAssetList
-                  {...position.coverAsObject}
-                  backgroundColor={colors.white}
-                  opacity={isLoading ? 1 : 0}
-                  pointerEvents="none"
-                />
-              </FlexItem>
+              <CurrencySelectionList
+                listItems={listItems}
+                renderItem={this.renderCurrencyItem}
+                showList={isFocused}
+                transitionPosition={transitionPosition}
+                type={type}
+              />
             </Column>
             <GestureBlocker type="bottom" />
           </Modal>

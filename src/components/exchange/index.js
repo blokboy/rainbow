@@ -1,4 +1,5 @@
 export { default as ConfirmExchangeButton } from './ConfirmExchangeButton';
+export { default as CurrencySelectionList } from './CurrencySelectionList';
 export { default as ExchangeAssetList } from './ExchangeAssetList';
 export { default as ExchangeInput } from './ExchangeInput';
 export { default as ExchangeInputField } from './ExchangeInputField';
