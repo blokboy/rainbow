@@ -25,6 +25,7 @@ import {
   sheetPreset,
   backgroundPreset,
 } from '../navigation/transitions/effects';
+import ChangeWalletModal from './ChangeWalletModal';
 
 const onTransitionEnd = () =>
   store.dispatch(updateTransitionProps({ isTransitioning: false }));
@@ -68,6 +69,12 @@ const SwipeStack = createMaterialTopTabNavigator(
 
 const MainNavigator = createStackNavigator(
   {
+    ChangeWalletModal: {
+      navigationOptions: {
+        ...expandedPreset,
+      },
+      screen: ChangeWalletModal,
+    },
     ConfirmRequest: {
       navigationOptions: {
         ...expandedPreset,

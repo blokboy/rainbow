@@ -8,16 +8,21 @@ import { FlexItem, Page } from '../components/layout';
 import { Icon } from '../components/icons';
 import { ProfileMasthead } from '../components/profile';
 import { position } from '../styles';
+import HeaderProfileInfo from '../components/header/HeaderProfileInfo';
 
 const ProfileScreen = ({
   accountAddress,
+  accountColor,
+  accountName,
   blurIntensity,
   isEmpty,
   nativeCurrency,
   navigation,
   onPressBackButton,
+  onPressProfileHeader,
   onPressSettings,
   requests,
+  shouldUpdate,
   transactions,
   transactionsCount,
 }) => (
@@ -26,13 +31,26 @@ const ProfileScreen = ({
       <HeaderButton onPress={onPressSettings}>
         <Icon name="gear" />
       </HeaderButton>
+      <HeaderProfileInfo
+        accountAddress={accountAddress}
+        accountColor={accountColor}
+        accountName={accountName}
+        onPress={onPressProfileHeader}
+        shouldUpdate={shouldUpdate}
+      >
+        <Icon name="gear" />
+      </HeaderProfileInfo>
       <BackButton direction="right" onPress={onPressBackButton} />
     </Header>
     <ActivityList
       accountAddress={accountAddress}
+      accountColor={accountColor}
+      accountName={accountName}
       header={
         <ProfileMasthead
           accountAddress={accountAddress}
+          accountColor={accountColor}
+          accountName={accountName}
           navigation={navigation}
           showBottomDivider={!isEmpty}
         />
