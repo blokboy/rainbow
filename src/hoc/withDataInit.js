@@ -16,6 +16,8 @@ import { requestsLoadState, requestsClearState } from '../redux/requests';
 import {
   settingsLoadState,
   settingsUpdateAccountAddress,
+  settingsUpdateAccountColor,
+  settingsUpdateAccountName,
 } from '../redux/settings';
 import {
   uniswapLoadState,
@@ -31,7 +33,7 @@ import {
   web3ListenerClearState,
   web3ListenerInit,
 } from '../redux/web3listener';
-import { walletInit } from '../model/wallet';
+import { walletInit, loadUserDataForAddress } from '../model/wallet';
 import {
   walletConnectLoadState,
   walletConnectClearState,
@@ -58,6 +60,8 @@ export default Component =>
         setIsWalletEthZero,
         settingsLoadState,
         settingsUpdateAccountAddress,
+        settingsUpdateAccountColor,
+        settingsUpdateAccountName,
         uniqueTokensClearState,
         uniqueTokensLoadState,
         uniqueTokensRefreshState,
@@ -164,8 +168,24 @@ export default Component =>
       initializeWallet: ownProps => async seedPhrase => {
         try {
           const { isImported, isNew, walletAddress } = await walletInit(
-            seedPhrase
+            seedPhrase,
+            ownProps.accountName,
+            ownProps.accountColor,
           );
+          let name = ownProps.accountName ? ownProps.accountName : 'My Wallet';
+          let color = ownProps.accountColor ? ownProps.accountColor : 0;
+
+          if (!ownProps.accountName && !ownProps.accountColor) {
+            const localData = await loadUserDataForAddress(walletAddress);
+            if (localData) {
+              name = localData.searchedName;
+              color = localData.searchedColor;
+            }
+          }
+
+          ownProps.settingsUpdateAccountName(name);
+          ownProps.settingsUpdateAccountColor(color);
+
           if (isNil(walletAddress)) {
             Alert.alert(
               'Import failed due to an invalid private key. Please try again.'

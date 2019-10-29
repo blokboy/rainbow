@@ -2,11 +2,11 @@ import { toLower } from 'lodash';
 import { connect } from 'react-redux';
 import { compose, withProps } from 'recompose';
 import { createSelector } from 'reselect';
-import { settingsUpdateAccountAddress } from '../redux/settings';
+import { settingsUpdateAccountAddress, settingsUpdateAccountColor, settingsUpdateAccountName } from '../redux/settings';
 
-const mapStateToProps = ({ settings: { accountAddress } }) => ({
-  accountAddress,
-});
+const mapStateToProps = ({
+  settings: {accountAddress, accountColor, accountName},
+}) => ({accountAddress, accountColor, accountName});
 
 const accountAddressSelector = state => state.accountAddress;
 
@@ -19,7 +19,7 @@ export default Component =>
   compose(
     connect(
       mapStateToProps,
-      { settingsUpdateAccountAddress }
+      { settingsUpdateAccountAddress, settingsUpdateAccountColor, settingsUpdateAccountName }
     ),
     withProps(lowerAccountAddressSelector)
   )(Component);
