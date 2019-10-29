@@ -141,6 +141,26 @@ export default Component =>
       },
     }),
     withHandlers({
+      createNewWallet: (ownProps) => async () => {
+        try {
+          const name = ownProps.accountName || 'My Wallet';
+          const color = ownProps.accountColor || 0;
+          const walletAddress = await createWallet(false, name, color);
+          ownProps.settingsUpdateAccountName(name);
+          ownProps.settingsUpdateAccountColor(color);
+  
+          await ownProps.uniqueTokensLoadState(walletAddress);
+          await ownProps.dataLoadState(walletAddress);
+          await ownProps.uniswapLoadState(walletAddress);
+  
+          return await walletInitialization(false, true, walletAddress, ownProps);
+        } catch (error) {
+          // TODO specify error states more granular
+          ownProps.onHideSplashScreen();
+          Alert.alert('Import failed due to an invalid private key. Please try again.');
+          return null;
+        }
+      },
       initializeWallet: ownProps => async seedPhrase => {
         try {
           const { isImported, isNew, walletAddress } = await walletInit(

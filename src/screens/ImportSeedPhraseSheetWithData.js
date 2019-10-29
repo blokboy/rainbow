@@ -16,13 +16,21 @@ import { deviceUtils } from '../utils';
 import ImportSeedPhraseSheet from './ImportSeedPhraseSheet';
 import { isValidSeed as validateSeed } from '../helpers/validators';
 
-const ConfirmImportAlert = onSuccess =>
+const ConfirmImportAlert = (onSuccess, navigation) =>
   Alert({
     buttons: [
       {
-        onPress: onSuccess,
-        style: 'destructive',
-        text: 'Delete and Import',
+        onPress: () => navigation.navigate('ExpandedAssetScreen', {
+          actionType: 'Import',
+          address: undefined,
+          asset: [],
+          isCurrentProfile: false,
+          isNewProfile: true,
+          onCloseModal: (isCanceled) => (isCanceled ? null : onSuccess()),
+          profile: {},
+          type: 'profile_creator',
+        }),
+        text: 'Import As New Wallet',
       },
       {
         style: 'cancel',
@@ -30,8 +38,8 @@ const ConfirmImportAlert = onSuccess =>
       },
     ],
     message:
-      'Importing this private key will overwrite your existing wallet. Before continuing, please make sure you’ve transferred its contents or backed up its private key.',
-    title: 'Are you sure you want to import?',
+      'Importing this private key will create new wallet. You can switch between your existing wallets in the menu on the top of profile screen.',
+    title: 'Are you sure you want to import new wallet?',
   });
 
 const ImportSeedPhraseSheetWithData = compose(
@@ -69,8 +77,8 @@ const ImportSeedPhraseSheetWithData = compose(
   withHandlers({
     getClipboardContents: ({ setClipboardContents }) => async () =>
       Clipboard.getString().then(setClipboardContents),
-    onImportSeedPhrase: ({ setIsWalletImporting }) => () =>
-      ConfirmImportAlert(() => setIsWalletImporting(true)),
+    onImportSeedPhrase: ({ setIsWalletImporting, navigation }) => () =>
+      ConfirmImportAlert(() => setIsWalletImporting(true), navigation),
     onInputChange: ({ isImporting, setSeedPhrase }) => ({ nativeEvent }) => {
       if (!isImporting) {
         setSeedPhrase(nativeEvent.text);
@@ -112,7 +120,9 @@ const ImportSeedPhraseSheetWithData = compose(
       }
 
       if (!prevProps.isImporting && isImporting) {
-        InteractionManager.runAfterInteractions(importSeedPhrase);
+        setTimeout(() => {
+          importSeedPhrase();
+        }, 20);
       }
     },
   }),

@@ -6,3 +6,4 @@ export {
   default as UniqueTokenExpandedState,
 } from './UniqueTokenExpandedState';
 export { default as AddContactState } from './AddContactState';
+export { default as ProfileCreator } from './ProfileCreator';

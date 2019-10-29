@@ -1,48 +1,31 @@
+import {get} from 'lodash';
 import PropTypes from 'prop-types';
-import React from 'react';
-import {
-  InteractionManager,
-  KeyboardAvoidingView,
-  View,
-  Keyboard,
-} from 'react-native';
-import {
-  compose,
-  onlyUpdateForKeys,
-  withHandlers,
-} from 'recompact';
-import GraphemeSplitter from 'grapheme-splitter';
-import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
-import { Text } from 'react-primitives';
+import React, {PureComponent} from 'react';
+import {compose, onlyUpdateForKeys} from 'recompact';
 import styled from 'styled-components/primitives';
-import { AssetPanel } from './asset-panel';
-import FloatingPanels from './FloatingPanels';
-import { withAccountData, withAccountSettings } from '../../hoc';
-import { Input } from '../inputs';
-import { colors, fonts } from '../../styles';
-import { Button, CancelButton } from '../buttons';
-import { TruncatedAddress } from '../text';
-import { abbreviations, deviceUtils } from '../../utils';
-
-import { ButtonPressAnimation } from '../animations';
+import {addNewLocalContact} from '../../handlers/commonStorage';
+import {withAccountData, withAccountSettings} from '../../hoc';
+import {colors, margin, padding} from '../../styles';
+import {abbreviations, deviceUtils} from '../../utils';
+import {ButtonPressAnimation} from '../animations';
+import {Button} from '../buttons';
+import {ContactAvatar, showDeleteContactActionSheet} from '../contacts';
+import {deleteUserInfo, editUserInfo} from '../../model/wallet';
 import CopyTooltip from '../CopyTooltip';
-import { showActionSheetWithOptions } from '../../utils/actionsheet';
-import { deleteUserInfo, editUserInfo } from '../../model/wallet';
+import Divider from '../Divider';
+import {Input} from '../inputs';
+import {Centered, KeyboardFixedOpenLayout} from '../layout';
+import {Text, TruncatedAddress} from '../text';
+import TouchableBackdrop from '../TouchableBackdrop';
+import {AssetPanel} from './asset-panel';
 import store from '../../redux/store';
-import { settingsUpdateAccountName, settingsUpdateAccountColor } from '../../redux/settings';
-import { makeSpaceAfterFirstEmoji } from '../../helpers/emojiHandler';
-
-const TopMenu = styled(View)`
-  justify-content: center;
-  align-items: center;
-  width: ${deviceUtils.dimensions.width - 110};
-  padding: 24px;
-`;
-
-const Container = styled(View)`
-  justify-content: center;
-  align-items: center;
-`;
+import FloatingPanels from './FloatingPanels';
+import PlaceholderText from '../text/PlaceholderText';
+import {makeSpaceAfterFirstEmoji} from '../../helpers/emojiHandler';
+import {
+  settingsUpdateAccountName,
+  settingsUpdateAccountColor,
+} from '../../redux/settings';
 
 const AddressAbbreviation = styled(TruncatedAddress).attrs({
   align: 'center',
@@ -52,46 +35,12 @@ const AddressAbbreviation = styled(TruncatedAddress).attrs({
   truncationLength: 4,
   weight: 'regular',
 })`
+  ${margin(9, 0, 5)};
   opacity: 0.6;
   width: 100%;
-  margin-top: 9px;
-  margin-bottom: 5px;
 `;
 
-const Divider = styled(View)`
-  width: 93px;
-  margin: 19px 0;
-  height: 2px;
-  opacity: 0.05;
-  background-color: ${colors.blueGreyLighter};
-`;
-
-const Placeholder = styled(Text)`
-  color: ${colors.blueGreyDark};
-  font-size: ${fonts.size.big};
-  font-weight: ${fonts.weight.semibold};
-  opacity: 0.3;
-  margin-bottom: -27px;
-`;
-
-const NameCircle = styled(View)`
-  height: 60px;
-  width: 60px;
-  border-radius: 30px;
-  margin-bottom: 19px;
-`;
-
-const FirstLetter = styled(Text)`
-  width: 100%;
-  text-align: center;
-  line-height: 58px;
-  font-size: 28px;
-  color: #fff;
-  padding-left: 0.5px;
-  font-weight: 600;
-`;
-
-class ProfileCreator extends React.PureComponent {
+class AddContactState extends PureComponent {
   static propTypes = {
     actionType: PropTypes.string,
     address: PropTypes.string,
@@ -113,50 +62,36 @@ class ProfileCreator extends React.PureComponent {
     super(props);
 
     this.state = {
-      color: 0,
+      color: this.props.isNewProfile
+        ? Math.floor(Math.random() * colors.avatarColor.length)
+        : this.props.profile.color,
       isCreatingWallet: false,
-      value: '',
+      value: get(this.props, 'profile.name', ''),
     };
   }
 
   componentDidMount = () => {
-    const newState = {
-      color: this.props.isNewProfile ? Math.floor(Math.random() * colors.avatarColor.length) : this.props.profile.color,
-      value: '',
-    };
-    if (this.props.profile.name) {
-      newState.value = this.props.profile.name;
+    if (this.state.value.length === 0) {
+      this._text.updateValue('Name');
     }
-    this.setState(newState);
-  }
+  };
 
-  format = (string) => (
-    this.props.format
-      ? this.props.format(string)
-      : string
-  )
-
-  onChange = async (event) => {
-    const { nativeEvent } = event;
-    let value = nativeEvent.text;
-    if (value.charCodeAt(0) === 32) {
-      value = value.substring(1);
-    }
-    this.setState({ value });
-  }
-
-  onChangeColor = async () => {
-    let newColor = this.state.color;
-    newColor = ++newColor > colors.avatarColor.length - 1 ? 0 : newColor++;
-    this.setState({ color: newColor });
-  }
+  inputRef = undefined;
 
   editProfile = async () => {
     if (this.state.value.length > 0) {
-      const { address, privateKey, seedPhrase } = this.props.profile;
-      await editUserInfo(makeSpaceAfterFirstEmoji(this.state.value), this.state.color, seedPhrase, privateKey, address);
+      const {address, privateKey, seedPhrase} = this.props.profile;
+      await editUserInfo(
+        makeSpaceAfterFirstEmoji(this.state.value),
+        this.state.color,
+        seedPhrase,
+        privateKey,
+        address
+      );
       if (this.props.isCurrentProfile) {
-        store.dispatch(settingsUpdateAccountName(makeSpaceAfterFirstEmoji(this.state.value)));
+        store.dispatch(
+          settingsUpdateAccountName(makeSpaceAfterFirstEmoji(this.state.value))
+        );
         store.dispatch(settingsUpdateAccountColor(this.state.color));
       }
       this.props.onCloseModal({
@@ -168,113 +103,144 @@ class ProfileCreator extends React.PureComponent {
       });
       this.props.navigation.goBack();
     }
-  }
+  };
 
-  addProfileInfo = async () => {
-    if (this.state.value.length > 0) {
-      await store.dispatch(settingsUpdateAccountName(makeSpaceAfterFirstEmoji(this.state.value)));
-      await store.dispatch(settingsUpdateAccountColor(this.state.color));
-      Keyboard.dismiss();
+  handleCancel = () => {
+    this.props.onUnmountModal('', 0, false);
+    if (this.props.onCloseModal) {
       this.props.onCloseModal();
-      this.props.navigation.goBack();
     }
-  }
-
-  onDeleteProfile = () => {
-    showActionSheetWithOptions({
-      cancelButtonIndex: 1,
-      destructiveButtonIndex: 0,
-      options: ['Delete Wallet', 'Cancel'],
-    }, async (buttonIndex) => {
-      if (buttonIndex === 0) {
-        await deleteUserInfo(this.props.address);
-        const { address } = this.props.profile;
-        this.props.onCloseModal({
-          address,
-          isDeleted: true,
-        });
-        this.props.navigation.goBack();
-      }
-    });
-  }
-
-  onCancel = () => {
     this.props.navigation.goBack();
-  }
+  };
+
+  handleChange = ({nativeEvent: {text}}) => {
+    const value = text.charCodeAt(0) === 32 ? text.substring(1) : text;
+    if (value.length > 0) {
+      this._text.updateValue(' ');
+    } else {
+      this._text.updateValue('Name');
+    }
+    this.setState({value});
+  };
+
+  handleChangeColor = async () => {
+    const {color} = this.state;
+
+    let newColor = color + 1;
+    if (newColor > colors.avatarColor.length - 1) {
+      newColor = 0;
+    }
+
+    this.setState({color: newColor});
+  };
+
+  handleDeleteContact = () =>
+    showDeleteContactActionSheet({
+      address: this.props.address,
+      nickname: this.state.value,
+      onDelete: this.handleCancel,
+    });
+
+  handleFocusInput = () => {
+    if (this.inputRef) {
+      this.inputRef.focus();
+    }
+  };
+
+  handleInputRef = ref => {
+    this.inputRef = ref;
+  };
 
   render() {
-    const placeholderText = this.props.isNewProfile ? 'New Wallet Name' : 'Name';
-    const acceptAction = this.props.isNewProfile ? this.addProfileInfo : this.editProfile;
+    const {address, contact} = this.props;
+    const {color, value} = this.state;
+    const acceptAction = this.props.isNewProfile
+      ? this.addProfileInfo
+      : this.editProfile;
+
     return (
-      <TouchableWithoutFeedback
-        style={{ width: deviceUtils.dimensions.width }}
-        onPress={this.editProfile}
-      >
-        <KeyboardAvoidingView behavior="padding">
-          <FloatingPanels>
-            <Container>
-              <TouchableWithoutFeedback>
-                <AssetPanel>
-                  <TopMenu>
-                    <ButtonPressAnimation onPress={this.onChangeColor} scaleTo={0.96}>
-                      <NameCircle style={{ backgroundColor: colors.avatarColor[this.state.color] }}>
-                        <FirstLetter>
-                          {new GraphemeSplitter().splitGraphemes(this.state.value)[0]}
-                        </FirstLetter>
-                      </NameCircle>
-                    </ButtonPressAnimation>
-                    <Placeholder>
-                      {this.state.value.length > 0 ? ' ' : placeholderText}
-                    </Placeholder>
-                    <Input
-                      style={{ fontWeight: 600, width: '100%' }}
-                      autoFocus={true}
-                      color={colors.dark}
-                      family={'SFProText'}
-                      letterSpacing={'tightest'}
-                      onChange={this.onChange}
-                      size="big"
-                      spellCheck="false"
-                      textAlign={'center'}
-                      value={this.state.value}
-                      autoCapitalize
-                      onSubmitEditing={acceptAction}
-                      returnKeyType={'done'}
-                    />
-                    <CopyTooltip textToCopy={this.props.address} tooltipText="Copy Address" waitForKeyboard>
-                      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-                        {!this.props.isNewProfile && <AddressAbbreviation address={this.props.address} />}
-                      </TouchableWithoutFeedback>
-                    </CopyTooltip>
-                    <Divider />
-                    <Button
-                      backgroundColor={this.state.value.length > 0 ? colors.appleBlue : undefined}
-                      width={215}
-                      showShadow
-                      disabled={!this.state.value.length > 0}
-                      onPress={acceptAction}
-                    >
-                      {this.props.isNewProfile ? `${this.props.actionType} Wallet` : 'Done'}
-                    </Button>
-                    {this.props.isCurrentProfile || this.props.isNewProfile
-                      ? <CancelButton
-                        style={{ paddingTop: 11 }}
-                        onPress={this.onCancel}
-                        text="Cancel"
-                      />
-                      : <CancelButton
-                        style={{ paddingTop: 11 }}
-                        onPress={this.onDeleteProfile}
-                        text="Delete Wallet"
-                      />
-                    }
-                  </TopMenu>
-                </AssetPanel>
-              </TouchableWithoutFeedback>
-            </Container>
-          </FloatingPanels>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+      <KeyboardFixedOpenLayout>
+        <TouchableBackdrop onPress={this.handleAddContact} />
+        <FloatingPanels maxWidth={deviceUtils.dimensions.width - 110}>
+          <AssetPanel>
+            <Centered css={padding(24, 25)} direction="column">
+              <ButtonPressAnimation
+                onPress={this.handleChangeColor}
+                scaleTo={0.96}>
+                <ContactAvatar
+                  color={color}
+                  large
+                  marginBottom={19}
+                  value={value}
+                />
+              </ButtonPressAnimation>
+              <PlaceholderText
+                ref={component => {
+                  this._text = component;
+                }}
+              />
+              <Input
+                autoCapitalize
+                autoFocus
+                letterSpacing="tightest"
+                onChange={this.handleChange}
+                onSubmitEditing={acceptAction}
+                returnKeyType="done"
+                size="big"
+                spellCheck="false"
+                ref={this.handleInputRef}
+                style={{width: '100%'}}
+                textAlign="center"
+                value={value}
+                weight="semibold"
+              />
+              <CopyTooltip
+                onHide={this.handleFocusInput}
+                textToCopy={address}
+                tooltipText="Copy Address">
+                <AddressAbbreviation address={address} />
+              </CopyTooltip>
+              <Centered paddingVertical={19} width={93}>
+                <Divider inset={false} />
+              </Centered>
+              <Button
+                backgroundColor={
+                  value.length > 0 ? colors.appleBlue : undefined
+                }
+                disabled={!value.length > 0}
+                height={43}
+                onPress={acceptAction}
+                showShadow
+                size="small"
+                width={215}>
+                <Text
+                  color="white"
+                  size="lmedium"
+                  style={{marginBottom: 1.5}}
+                  weight="semibold">
+                  {this.props.isNewProfile
+                    ? `${this.props.actionType} Wallet`
+                    : 'Done'}
+                </Text>
+              </Button>
+              <ButtonPressAnimation
+                marginTop={11}
+                onPress={
+                  contact ? this.handleDeleteContact : this.handleCancel
+                }>
+                <Centered backgroundColor={colors.white} css={padding(8, 9)}>
+                  <Text
+                    color={colors.alpha(colors.blueGreyDark, 0.4)}
+                    size="lmedium"
+                    weight="regular">
+                    {contact ? 'Delete Contact' : 'Cancel'}
+                  </Text>
+                </Centered>
+              </ButtonPressAnimation>
+            </Centered>
+          </AssetPanel>
+        </FloatingPanels>
+      </KeyboardFixedOpenLayout>
     );
   }
 }
@@ -282,14 +248,4 @@ class ProfileCreator extends React.PureComponent {
 export default compose(
   withAccountData,
   withAccountSettings,
-  withHandlers({
-    onPressSend: ({ navigation, asset: { address } }) => () => {
-      navigation.goBack();
-
-      InteractionManager.runAfterInteractions(() => {
-        navigation.navigate('SendSheet', { asset: address });
-      });
-    },
-  }),
-  onlyUpdateForKeys(['price', 'subtitle']),
-)(ProfileCreator);
+)(AddContactState);
