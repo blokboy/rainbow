@@ -152,7 +152,6 @@ const listenOnAddressMessages = socket => dispatch => {
     dispatch(addressAssetsReceived(message, false, true));
   });
   socket.on(messages.ADDRESS_INFO.RECEIVED, message => {
-    console.log('YOOO');
     dispatch(addressInfoReceived(message));
   });
   socket.on(messages.ADDRESS_INFO.CHANGED, message => {

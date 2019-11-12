@@ -61,11 +61,6 @@ export const makerLoadState = () => async (dispatch, getState) => {
 };
 
 export const makerCDPInfoInit = () => async (dispatch, getState) => {
-  const maker = await Maker.create('http', {
-      url: `https://network.infura.io/v3/${REACT_APP_INFURA_PROJECT_ID}`, 
-  });
-  console.log('maker  obj ', maker);
-  await maker.authenticate()
 
   new Promise((resolve, reject) => {
     const getCDPInfo = () =>

@@ -23,7 +23,7 @@ import {
 import { CDPIDS } from './maker';
 import Maker from '@makerdao/dai';
 import { REACT_APP_INFURA_PROJECT_ID } from 'react-native-dotenv';
-import { web3Provider, toChecksumAddress } from '../handlers/web3';
+import { web3Provider } from '../handlers/web3';
 
 // -- Constants --------------------------------------- //
 
@@ -181,18 +181,16 @@ export const assetsReceived = message => dispatch => {
 
 export const addressInfoReceived = message => async (dispatch, getState) => {
   const { accountAddress, network } = getState().settings;
-  console.log('message ', message);
-  console.log('provider: ', web3Provider);
   const cdpInfo = get(message, 'payload.info.cdp_ids');
-
   let maker = null;
-  //let userAddress = await toChecksumAddress(web3Provider._network.ensAddress);
 
+  console.log('provider ', web3Provider)
+  console.log(web3Provider.connection.url)
   try {
     maker = await Maker.create('http', {
-      provider: web3Provider,
-      url: `https://network.infura.io/v3/${REACT_APP_INFURA_PROJECT_ID}`,
+      url: web3Provider.connection.url,
     });
+    await maker.authenticate();
     console.log('maker obj', maker);
   } catch (error) {
     console.log('error', error);
