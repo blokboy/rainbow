@@ -17,7 +17,13 @@ import {
   uniswapUpdateAssets,
   uniswapUpdateLiquidityTokens,
 } from './uniswap';
+import {
+  makerUpdateCDPIDs,
+} from './maker';
 import { CDPIDS } from './maker';
+import Maker from '@makerdao/dai';
+import { REACT_APP_INFURA_PROJECT_ID } from 'react-native-dotenv';
+import { web3Provider, toChecksumAddress } from '../handlers/web3';
 
 // -- Constants --------------------------------------- //
 
@@ -173,19 +179,28 @@ export const assetsReceived = message => dispatch => {
 };
 
 
-export const addressInfoReceived = message => (dispatch, getState) => {
+export const addressInfoReceived = message => async (dispatch, getState) => {
   const { accountAddress, network } = getState().settings;
-  console.log('message ', message)
-  const cdpInfo = get(message, 'payload.info');
+  console.log('message ', message);
+  console.log('provider: ', web3Provider);
+  const cdpInfo = get(message, 'payload.info.cdp_ids');
+
+  let maker = null;
+  //let userAddress = await toChecksumAddress(web3Provider._network.ensAddress);
+
+  try {
+    maker = await Maker.create('http', {
+      provider: web3Provider,
+      url: `https://network.infura.io/v3/${REACT_APP_INFURA_PROJECT_ID}`,
+    });
+    console.log('maker obj', maker);
+  } catch (error) {
+    console.log('error', error);
+  }
 
   if (!cdpInfo.length) return;
 
-  saveAssets(accountAddress, cdpInfo, network);
-
-  dispatch({
-    payload: cdpInfo,
-    type: DATA_UPDATE_ASSETS,
-  });
+  dispatch(makerUpdateCDPIDs(cdpInfo));
 };
 
 export const priceChanged = message => dispatch => {

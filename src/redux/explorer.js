@@ -152,8 +152,8 @@ const listenOnAddressMessages = socket => dispatch => {
     dispatch(addressAssetsReceived(message, false, true));
   });
   socket.on(messages.ADDRESS_INFO.RECEIVED, message => {
+    console.log('YOOO');
     dispatch(addressInfoReceived(message));
-    //  TODO create a f(x) inside addressInfoReceived in redux/data.js to parse this message
   });
   socket.on(messages.ADDRESS_INFO.CHANGED, message => {
     dispatch(addressInfoReceived(message));
