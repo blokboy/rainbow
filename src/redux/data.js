@@ -17,6 +17,7 @@ import {
   uniswapUpdateAssets,
   uniswapUpdateLiquidityTokens,
 } from './uniswap';
+import { CDPIDS } from './maker';
 
 // -- Constants --------------------------------------- //
 
@@ -169,6 +170,22 @@ export const assetsReceived = message => dispatch => {
   if (!assets.length) return;
   const parsedAssets = map(assets, asset => parseAsset(asset));
   dispatch(uniswapUpdateAssets(parsedAssets));
+};
+
+
+export const addressInfoReceived = message => (dispatch, getState) => {
+  const { accountAddress, network } = getState().settings;
+  console.log('message ', message)
+  const cdpInfo = get(message, 'payload.info');
+
+  if (!cdpInfo.length) return;
+
+  saveAssets(accountAddress, cdpInfo, network);
+
+  dispatch({
+    payload: cdpInfo,
+    type: DATA_UPDATE_ASSETS,
+  });
 };
 
 export const priceChanged = message => dispatch => {

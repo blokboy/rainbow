@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 import { uniswapAssetAddresses } from '../references';
 import {
   addressAssetsReceived,
+  addressInfoReceived,
   assetsReceived,
   priceChanged,
   transactionsReceived,
@@ -20,6 +21,10 @@ const messages = {
     APPENDED: 'appended address assets',
     CHANGED: 'changed address assets',
     RECEIVED: 'received address assets',
+  },
+  ADDRESS_INFO: {
+    CHANGED: 'changed address info',
+    RECEIVED: 'received address info',
   },
   ADDRESS_TRANSACTIONS: {
     APPENDED: 'appended address transactions',
@@ -52,7 +57,7 @@ const addressSubscription = (address, currency, action = 'subscribe') => [
       currency: toLower(currency),
       transactions_limit: 1000,
     },
-    scope: ['assets', 'transactions'],
+    scope: ['assets', 'transactions', 'info'],
   },
 ];
 
@@ -145,6 +150,13 @@ const listenOnAddressMessages = socket => dispatch => {
 
   socket.on(messages.ADDRESS_ASSETS.CHANGED, message => {
     dispatch(addressAssetsReceived(message, false, true));
+  });
+  socket.on(messages.ADDRESS_INFO.RECEIVED, message => {
+    dispatch(addressInfoReceived(message));
+    //  TODO create a f(x) inside addressInfoReceived in redux/data.js to parse this message
+  });
+  socket.on(messages.ADDRESS_INFO.CHANGED, message => {
+    dispatch(addressInfoReceived(message));
   });
 };
 

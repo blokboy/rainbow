@@ -7,7 +7,7 @@ import { compose, withHandlers } from 'recompact';
 import { createSelector } from 'reselect';
 import { AssetListItemSkeleton } from '../components/asset-list';
 import { BalanceCoinRow } from '../components/coin-row';
-import { UniswapInvestmentCard } from '../components/investment-cards';
+import { UniswapInvestmentCard, MakerInvestmentCard } from '../components/investment-cards';
 import { TokenFamilyWrap } from '../components/token-family';
 import { buildUniqueTokenList, buildCoinsList } from './assets';
 
@@ -23,6 +23,8 @@ const setIsWalletEmptySelector = state => state.setIsWalletEmpty;
 const uniqueTokensSelector = state => state.uniqueTokens;
 const uniswapSelector = state => state.uniswap;
 const uniswapTotalSelector = state => state.uniswapTotal;
+const makerSelector = state => state.uniswap; // Come back and change data later
+const makerTotalSelector = state => state.uniswapTotal; // Change after render
 
 const enhanceRenderItem = compose(
   withNavigation,
@@ -41,6 +43,7 @@ const enhanceRenderItem = compose(
 
 const TokenItem = enhanceRenderItem(BalanceCoinRow);
 const UniswapCardItem = enhanceRenderItem(UniswapInvestmentCard);
+const MakerCardItem = enhanceRenderItem(MakerInvestmentCard);
 
 const balancesSkeletonRenderItem = item => (
   <AssetListItemSkeleton animated descendingOpacity={false} {...item} />
@@ -52,6 +55,9 @@ const tokenFamilyItem = item => (
 const uniswapRenderItem = item => (
   <UniswapCardItem {...item} assetType="uniswap" isCollapsible />
 );
+const makerRenderItem = item => (
+  <MakerCardItem {...item} assetType="token" isCollapsible />
+);
 
 const filterWalletSections = sections =>
   sections.filter(({ data, header }) =>
@@ -62,9 +68,10 @@ const buildWalletSections = (
   balanceSection,
   setIsWalletEmpty,
   uniqueTokenFamiliesSection,
-  uniswapSection
+  uniswapSection,
+  makerSection,
 ) => {
-  const sections = [balanceSection, uniswapSection, uniqueTokenFamiliesSection];
+  const sections = [balanceSection, /*uniswapSection,*/ makerSection, uniqueTokenFamiliesSection];
 
   const filteredSections = filterWalletSections(sections);
   const isEmpty = !filteredSections.length;
@@ -91,6 +98,23 @@ const withUniswapSection = (
   investments: true,
   name: 'investments',
   renderItem: uniswapRenderItem,
+});
+
+const withMakerSection  = (
+  language,
+  nativeCurrency,
+  uniswap,
+  uniswapTotal
+) => ({
+  data: uniswap,
+  header: {
+    title: "Investments - CDPs",
+    totalValue: uniswapTotal,
+    totalItems: uniswap.length, //This should change to a boolean for safe/unsafe/pending
+  },
+  investments: true,
+  name: 'investments',
+  renderItem: makerRenderItem,
 });
 
 const withBalanceSection = (
@@ -227,6 +251,16 @@ const uniswapSectionSelector = createSelector(
   withUniswapSection
 );
 
+const makerSectionSelector = createSelector(
+  [
+    languageSelector,
+    nativeCurrencySelector,
+    makerSelector,
+    makerTotalSelector,
+  ],
+  withMakerSection
+);
+
 const uniqueTokenFamiliesSelector = createSelector(
   [languageSelector, uniqueTokensSelector, uniqueTokenDataSelector],
   withUniqueTokenFamiliesSection
@@ -238,6 +272,7 @@ export default createSelector(
     setIsWalletEmptySelector,
     uniqueTokenFamiliesSelector,
     uniswapSectionSelector,
+    makerSectionSelector,
   ],
   buildWalletSections
 );

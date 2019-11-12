@@ -93,6 +93,8 @@ class App extends Component {
         );
         this.onPushNotificationOpened(topic, false, fromLocal);
       });
+
+      console.log('state', state);
   }
 
   componentWillUnmount() {
